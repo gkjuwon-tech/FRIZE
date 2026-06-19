@@ -1,0 +1,16 @@
+[start scout stl 05:00:32]
+   Volumes:        38
+WARNING: Object may not be a valid 2-manifold and may need repair!
+EXPORT-WARNING: Exported object may not be a valid 2-manifold and may need repair
+[done scout stl 05:06:30 exit=0]
+[start visor stl 05:06:30]
+   Halffacets:  27332
+   Facets:      13666
+   Volumes:        22
+[done visor stl 05:12:53 exit=0]
+total 13005
+drwxr-xr-x 1 wonma 197609       0 Jun 18 05:12 .
+drwxr-xr-x 1 wonma 197609       0 Jun 18 05:00 ..
+-rw-r--r-- 1 wonma 197609 8283501 Jun 18 05:06 scout.stl
+-rw-r--r-- 1 wonma 197609     363 Jun 18 05:12 stl_export.log
+-rw-r--r-- 1 wonma 197609 5023782 Jun 18 05:12 visor.stl

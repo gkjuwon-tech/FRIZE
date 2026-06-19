@@ -1,0 +1,16 @@
+[Unit]
+Description=FRIZE Cockpit (kiosk) on CONSOLE-1
+After=network-online.target frize-core.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+Environment=FRIZE_CORE_WS=ws://localhost:8000/ws/cockpit
+ExecStart=/usr/local/bin/frize-kiosk
+Restart=always
+RestartSec=2
+# 현장 콘솔: 죽으면 즉시 복구
+OOMScoreAdjust=-500
+
+[Install]
+WantedBy=multi-user.target

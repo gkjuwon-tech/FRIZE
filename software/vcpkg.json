@@ -1,0 +1,28 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "frize",
+  "version": "0.1.0",
+  "description": "FRIZE firefighting command OS ― C++ services.",
+  "dependencies": [
+    "nlohmann-json",
+    "spdlog",
+    { "name": "paho-mqttpp3", "default-features": false },
+    "openssl",
+    "crow",
+    "cpp-httplib"
+  ],
+  "features": {
+    "scout": {
+      "description": "Recon drone (flight + perception)",
+      "dependencies": [ "mavsdk", { "name": "opencv4", "default-features": false, "features": ["jpeg"] } ]
+    },
+    "mapping": {
+      "description": "3D mapping / SLAM",
+      "dependencies": [ "eigen3", "pcl" ]
+    },
+    "visor": {
+      "description": "Smart goggles edge app",
+      "dependencies": [ { "name": "opencv4", "default-features": false, "features": ["jpeg"] } ]
+    }
+  }
+}

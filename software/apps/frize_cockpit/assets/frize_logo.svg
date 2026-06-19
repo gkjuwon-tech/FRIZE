@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 64" width="220" height="64">
+  <defs>
+    <linearGradient id="flame" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#e0241c"/>
+      <stop offset="1" stop-color="#ff8c00"/>
+    </linearGradient>
+  </defs>
+  <!-- 마크: 불(레드) + 얼음 결정(시안) = freeze the chaos -->
+  <g transform="translate(8,8)">
+    <rect x="0" y="0" width="48" height="48" rx="11" fill="url(#flame)"/>
+    <path d="M24 9 C29 18 35 20 30 30 C28 34 19 35 18 28 C17 23 22 22 22 17 C18 21 14 26 16 33 C18 41 31 42 34 33 C37 25 28 19 24 9 Z" fill="#fff" opacity="0.92"/>
+    <g stroke="#35c4e0" stroke-width="2.2" stroke-linecap="round">
+      <line x1="40" y1="40" x2="40" y2="46"/>
+      <line x1="37" y1="43" x2="43" y2="43"/>
+      <line x1="38" y1="41" x2="42" y2="45"/>
+      <line x1="42" y1="41" x2="38" y2="45"/>
+    </g>
+  </g>
+  <text x="66" y="34" font-family="Consolas,monospace" font-size="26" font-weight="700" fill="#e6e9ef">FRIZE</text>
+  <text x="67" y="50" font-family="Consolas,monospace" font-size="9" fill="#5b626d">COMMAND OS</text>
+</svg>

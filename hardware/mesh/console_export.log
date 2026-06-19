@@ -1,0 +1,7 @@
+[start console stl 09:31:30]
+   Facets:       6519
+   Volumes:        28
+WARNING: Object may not be a valid 2-manifold and may need repair!
+EXPORT-WARNING: Exported object may not be a valid 2-manifold and may need repair
+[done console stl 09:33:34 exit=0]
+-rw-r--r-- 1 wonma 197609 2404000 Jun 19 09:33 mesh/console.stl

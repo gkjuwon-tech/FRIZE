@@ -1,0 +1,21 @@
+00:03.125  cycles           | WARNING HIPEW initialization failed: Error opening HIP dynamic library
+C:\Users\wonma\Documents\FRIZE\hardware\render_blender\render_studio.py:49: DeprecationWarning: 'World.use_nodes' is expected to be removed in Blender 6.0
+  w.use_nodes = True; nt = w.node_tree; nt.nodes.clear()
+C:\Users\wonma\Documents\FRIZE\hardware\render_blender\render_studio.py:66: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  m = bpy.data.materials.new("floor"); m.use_nodes=True
+C:\Users\wonma\Documents\FRIZE\hardware\render_blender\render_studio.py:89: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  m=bpy.data.materials.new(name); m.use_nodes=True
+02:19.016  render           | Saved: 'C:\Users\wonma\Documents\FRIZE\hardware\renders_studio\scout.png'
+04:47.297  render           | Saved: 'C:\Users\wonma\Documents\FRIZE\hardware\renders_studio\console.png'
+07:10.391  render           | Saved: 'C:\Users\wonma\Documents\FRIZE\hardware\renders_studio\visor.png'
+[render] GPU: OPTIX
+[render] scout -> C:\Users\wonma\Documents\FRIZE\hardware\render_blender\..\renders_studio\scout.png
+[render] console -> C:\Users\wonma\Documents\FRIZE\hardware\render_blender\..\renders_studio\console.png
+[render] visor -> C:\Users\wonma\Documents\FRIZE\hardware\render_blender\..\renders_studio\visor.png
+[done] all renders
+Blender 5.1.2 (hash ec6e62d40fa9 built 2026-05-19 01:37:34)
+Timer 'STL Import' took 65.52 ms
+Timer 'STL Import' took 20.24 ms
+Timer 'STL Import' took 21.29 ms
+
+Blender quit

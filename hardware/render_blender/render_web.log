@@ -1,0 +1,26 @@
+00:03.531  cycles           | WARNING HIPEW initialization failed: Error opening HIP dynamic library
+C:\Users\wonma\Documents\FRIZE\hardware\render_blender\render_studio.py:46: DeprecationWarning: 'World.use_nodes' is expected to be removed in Blender 6.0
+  w=bpy.data.worlds.new("frize"); bpy.context.scene.world=w; w.use_nodes=True
+C:\Users\wonma\Documents\FRIZE\hardware\render_blender\render_studio.py:71: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  m=bpy.data.materials.new(name); m.use_nodes=True; return m, m.node_tree.nodes['Principled BSDF']
+00:55.781  render           | Saved: 'C:\Users\wonma\Documents\FRIZE\hardware\renders_web\scout.png'
+02:35.938  render           | Saved: 'C:\Users\wonma\Documents\FRIZE\hardware\renders_web\console.png'
+04:07.969  render           | Saved: 'C:\Users\wonma\Documents\FRIZE\hardware\renders_web\visor.png'
+05:51.094  render           | Saved: 'C:\Users\wonma\Documents\FRIZE\hardware\renders_web\vent.png'
+[render] GPU: OPTIX
+[render] scout
+[render] console
+[render] visor
+[render] vent
+[done] all renders
+Blender 5.1.2 (hash ec6e62d40fa9 built 2026-05-19 01:37:34)
+Timer 'STL Import' took 73.83 ms
+Timer 'STL Import' took 27.41 ms
+Timer 'STL Import' took 1.98 ms
+Timer 'STL Import' took 18.38 ms
+Timer 'STL Import' took 7.05 ms
+Timer 'STL Import' took 6.16 ms
+Timer 'STL Import' took 301.50 ms
+Timer 'STL Import' took 35.09 ms
+
+Blender quit

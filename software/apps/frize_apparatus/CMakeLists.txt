@@ -1,0 +1,7 @@
+add_executable(frize_apparatus src/main.cpp src/actuator.cpp)
+target_include_directories(frize_apparatus PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_compile_features(frize_apparatus PRIVATE cxx_std_17)
+target_link_libraries(frize_apparatus PRIVATE frize_common)
+if(UNIX)
+    target_compile_definitions(frize_apparatus PRIVATE FRIZE_HAVE_SERIAL)
+endif()

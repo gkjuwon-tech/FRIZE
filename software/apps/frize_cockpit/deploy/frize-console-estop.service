@@ -1,0 +1,16 @@
+[Unit]
+Description=FRIZE CONSOLE-1 E-STOP bridge (independent safety path)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+Environment=FRIZE_MQTT_HOST=localhost
+Environment=FRIZE_ESTOP_DEVICE=/dev/input/by-id/frize-estop
+Environment=FRIZE_ESTOP_KEYCODE=1
+ExecStart=/usr/local/bin/frize_console_estop
+Restart=always
+RestartSec=1
+
+[Install]
+WantedBy=multi-user.target

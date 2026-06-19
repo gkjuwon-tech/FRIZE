@@ -1,0 +1,28 @@
+# FRIZE 통합 스택 (메시지버스 + 코어). 디바이스/콕핏은 호스트에서 실행 권장.
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: frize-mosquitto
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./docker/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+
+  core:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.core
+    container_name: frize-core
+    depends_on:
+      - mosquitto
+    environment:
+      FRIZE_MQTT_HOST: mosquitto
+      FRIZE_MQTT_PORT: "1883"
+      FRIZE_HTTP_PORT: "8000"
+      FRIZE_SITE_LAT: "37.5665"
+      FRIZE_SITE_LON: "126.9780"
+      # VLM 판단 켜려면 키 주입(없으면 감지 없이 동작):
+      FRIZE_ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
+      FRIZE_VLM_MODEL: "claude-opus-4-8"
+    ports:
+      - "8000:8000"     # 콕핏 WS/REST

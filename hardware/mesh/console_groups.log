@@ -1,0 +1,16 @@
+[body 21:35:05]
+   Volumes:         6
+[screen 21:35:27]
+   Facets:        180
+[metal 21:35:33]
+   Volumes:        44
+[accent 21:36:09]
+   Volumes:        11
+[rubber 21:36:21]
+   Volumes:        11
+[done 21:36:35]
+-rw-r--r-- 1 wonma 197609  324794 Jun 19 21:36 mesh/console_accent.stl
+-rw-r--r-- 1 wonma 197609  373294 Jun 19 21:35 mesh/console_body.stl
+-rw-r--r-- 1 wonma 197609 1025534 Jun 19 21:36 mesh/console_metal.stl
+-rw-r--r-- 1 wonma 197609  370851 Jun 19 21:36 mesh/console_rubber.stl
+-rw-r--r-- 1 wonma 197609   35644 Jun 19 21:35 mesh/console_screen.stl

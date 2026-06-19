@@ -1,0 +1,7 @@
+[start visor v2 stl 09:47:53]
+   Edges:       12521
+   Halffacets:  11790
+   Facets:       5895
+   Volumes:         9
+[done visor v2 stl 09:52:12 exit=0]
+-rw-r--r-- 1 wonma 197609 2438365 Jun 19 09:52 mesh/visor.stl

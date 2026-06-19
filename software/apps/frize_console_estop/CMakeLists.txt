@@ -1,0 +1,3 @@
+add_executable(frize_console_estop main.cpp)
+target_compile_features(frize_console_estop PRIVATE cxx_std_17)
+target_link_libraries(frize_console_estop PRIVATE frize_common)
