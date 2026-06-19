@@ -23,6 +23,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(FRIZE_BUILD_TESTS   "단위 테스트 빌드"        ON)
 option(FRIZE_BUILD_CORE    "지휘 커널 빌드"          ON)
+option(FRIZE_BUILD_RECON_SIM "트윈 재구성 시뮬 빌드(의존성0)" ON)
 option(FRIZE_BUILD_SCOUT   "드론 SW 빌드(MAVSDK)"    OFF)
 option(FRIZE_BUILD_MAPPING "3D 맵핑 SW 빌드(PCL)"    OFF)
 option(FRIZE_BUILD_VISOR   "고글 SW 빌드(OpenCV)"    OFF)
@@ -33,6 +34,8 @@ option(FRIZE_BUILD_CONSOLE "콘솔 E-STOP 브리지 빌드"  OFF)
 enable_testing()
 
 add_subdirectory(libs/frize_common)
+add_subdirectory(libs/frize_recon)   # 헤더 온리, 의존성 0 — 항상 사용 가능
+if(FRIZE_BUILD_RECON_SIM) add_subdirectory(apps/frize_recon_sim) endif()
 if(FRIZE_BUILD_CORE)    add_subdirectory(apps/frize_core)    endif()
 if(FRIZE_BUILD_SCOUT)   add_subdirectory(apps/frize_scout)   endif()
 if(FRIZE_BUILD_MAPPING) add_subdirectory(apps/frize_mapping) endif()
@@ -43,4 +46,5 @@ if(FRIZE_BUILD_CONSOLE) add_subdirectory(apps/frize_console_estop) endif()
 
 message(STATUS "FRIZE build:  core=${FRIZE_BUILD_CORE} scout=${FRIZE_BUILD_SCOUT} "
                "mapping=${FRIZE_BUILD_MAPPING} visor=${FRIZE_BUILD_VISOR} "
-               "cockpit=${FRIZE_BUILD_COCKPIT} console=${FRIZE_BUILD_CONSOLE}")
+               "cockpit=${FRIZE_BUILD_COCKPIT} console=${FRIZE_BUILD_CONSOLE} "
+               "recon_sim=${FRIZE_BUILD_RECON_SIM}")
