@@ -54,6 +54,7 @@ enum class CommandAction {
     MoveTo, Highlight, Annotate,
     Advance, Retreat, Rally, ForceEntry,
     ReconZone, InvestigatePoint,    // 드론 명시적 태스킹: "저기 먼저 조사해!"(자율탐사 가로채기)
+    DeployAnchor,                   // 드론이 UWB 측위 비콘을 현 위치/지정점에 투하
     Hold, Rtl, Land,
     AimAndSpray,
     Open, Close            // IoT 소방장비(VENT-1): 포트/배연구/문 열기·닫기
@@ -322,7 +323,8 @@ NLOHMANN_JSON_SERIALIZE_ENUM(CommandAction, {
     {CommandAction::MoveTo,"move_to"},{CommandAction::Highlight,"highlight"},{CommandAction::Annotate,"annotate"},
     {CommandAction::Advance,"advance"},{CommandAction::Retreat,"retreat"},{CommandAction::Rally,"rally"},
     {CommandAction::ForceEntry,"force_entry"},{CommandAction::ReconZone,"recon_zone"},
-    {CommandAction::InvestigatePoint,"investigate_point"},{CommandAction::Hold,"hold"},
+    {CommandAction::InvestigatePoint,"investigate_point"},{CommandAction::DeployAnchor,"deploy_anchor"},
+    {CommandAction::Hold,"hold"},
     {CommandAction::Rtl,"rtl"},{CommandAction::Land,"land"},{CommandAction::AimAndSpray,"aim_and_spray"},
     {CommandAction::Open,"open"},{CommandAction::Close,"close"}})
 NLOHMANN_JSON_SERIALIZE_ENUM(ArCueKind, {

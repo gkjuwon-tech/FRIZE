@@ -162,6 +162,29 @@ module avionics(){
     color(C_ACCENT) translate([34,20,42]) sphere(d=16,$fn=30);       // GNSS 돔
 }
 
+// ============ UWB 앵커 디스펜서 (드론이 비콘을 싣고 다니다 투하) ============
+//  벨리 하부 측면에 매거진. 앵커 4발을 수직 적재, 하단 서보 게이트가 1발씩 낙하.
+//  진입 직후 진입구·계단참·분기에 던져 실내 UWB 측위망을 먼저 깐다.
+module anchor_dispenser(){
+    mag_d = 78; mag_h = 152;     // 앵커 3발 스택(D=72,H=46)
+    // 매거진 튜브
+    color(C_PLATE) difference(){
+        cylinder(d=mag_d, h=mag_h, $fn=48);
+        translate([0,0,-1]) cylinder(d=mag_d-5, h=mag_h+2, $fn=48);
+        // 적재 확인창
+        for(z=[30:46:mag_h-30]) translate([0,mag_d/2,z]) rotate([90,0,0]) cylinder(d=10,h=mag_d,$fn=20);
+    }
+    // 적재된 앵커 4발(형상 암시: 납작 디스크)
+    color(C_ACCENT) for(i=[0:2]) translate([0,0,24+i*46]) cylinder(d=mag_d-9, h=40, $fn=40);
+    // 하단 서보 게이트
+    color(C_METAL) translate([0,0,-6]) difference(){ cylinder(d=mag_d, h=10, $fn=48);
+        translate([0,0,-1]) cylinder(d=mag_d-12,h=12,$fn=48); }
+    color([0.1,0.1,0.12]) translate([mag_d/2-2,0,-2]) rbox([16,24,18],2);   // 서보
+    color(C_ACCENT) translate([mag_d/2-12,0,-10]) rbox([mag_d-20,6,2],1,10);// 게이트 슬라이드
+    // 마운트 브래킷(페이로드 프레임에 접촉)
+    color(C_PLATE) translate([0,0,mag_h]) cylinder(d=mag_d, h=8, $fn=48);
+}
+
 // ============ 조립 ============
 module scout(){
     // 하판/상판
@@ -181,6 +204,8 @@ module scout(){
     translate([0,10,-44])  gimbal();
     translate([0,-50,-40]) lidar();
     translate([0,52,-40])  gas_pod();
+    // UWB 앵커 디스펜서(벨리 하부, 페이로드 프레임에 접촉)
+    translate([0,-8,-35-156]) anchor_dispenser();
 }
 
 if      (PART_MODE=="ALL")         scout();
@@ -188,4 +213,5 @@ else if (PART_MODE=="PLATE")       center_plate(true);
 else if (PART_MODE=="ARM_CLAMP")   arm_clamp();
 else if (PART_MODE=="MOTOR_MOUNT") motor_mount();
 else if (PART_MODE=="PAYLOAD")     payload_frame();
+else if (PART_MODE=="DISPENSER")   anchor_dispenser();
 else if (PART_MODE=="LEG")         landing_leg();

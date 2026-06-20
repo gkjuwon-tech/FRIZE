@@ -77,6 +77,8 @@ int main() {
     // 프런티어 탐사 상태
     bool exploring=false; Vec3 cur_target{}; bool have_target=false;
     bool investigating=false;   // 명시적 태스킹("저기 먼저 조사해") 진행 중 ― 프런티어 가로채기
+    int anchors_left = std::atoi(envs("FRIZE_ANCHOR_MAG","3").c_str());  // 디스펜서 매거진
+    Vec3 last_pos = home; int anchor_seq=0;
 
     auto ack = [&](const Command& c, CommandStatus s, const std::string& d){
         CommandAck a; a.cmd_id=c.cmd_id; a.device_id=device_id; a.status=s; a.detail=d;
@@ -122,6 +124,22 @@ int main() {
                 } else ack(c, CommandStatus::Failed, "목표 좌표 없음");
                 break;
             }
+            case CommandAction::DeployAnchor: {   // UWB 측위 비콘 투하(실내 측위망 구축)
+                if (anchors_left <= 0) { ack(c, CommandStatus::Failed, "앵커 매거진 비었음"); break; }
+                Vec3 drop = last_pos;
+                if (c.params.contains("world_pos")) { auto w=c.params["world_pos"];
+                    drop = Vec3{ w.value("x",last_pos.x), w.value("y",last_pos.y), 0.0 }; }
+                else drop.z = 0.0;            // 바닥으로 낙하
+                --anchors_left;
+                // 투하 위치를 Detection으로 송출 → 월드모델/트윈에 앵커 점으로 표시
+                Detection d; d.det_id = device_id + "-anchor-" + std::to_string(++anchor_seq);
+                d.source_device = device_id; d.hazard = HazardClass::Unknown; d.severity = Severity::Info;
+                d.confidence = 1.0; d.label = "uwb_anchor"; d.rationale = "UWB 측위 비콘 투하";
+                d.world_pos = drop;
+                bus.publish(Topic::detection(device_id), Envelope::wrap(MessageType::Detection, device_id, d), 1);
+                ack(c, CommandStatus::Done, "앵커 투하(잔여 " + std::to_string(anchors_left) + "발)");
+                break;
+            }
             case CommandAction::Hold: exploring=false; investigating=false; flight->hold(); ack(c, CommandStatus::Done, "호버"); break;
             case CommandAction::Rtl:  exploring=false; flight->return_to_launch(); ack(c, CommandStatus::Executing, "복귀"); break;
             case CommandAction::Land: exploring=false; flight->land(); ack(c, CommandStatus::Executing, "착륙"); break;
@@ -148,7 +166,7 @@ int main() {
         }
 
         auto st = flight->poll(dt);
-        flight_armed_ = st.armed;
+        flight_armed_ = st.armed; last_pos = st.position;
 
         // 자율 프런티어 탐사: 목표 도달 or 미설정이면 가장 가까운 프런티어 선택(빈곳 채움)
         if (exploring) {
