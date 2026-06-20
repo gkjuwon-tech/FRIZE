@@ -72,6 +72,9 @@ int main() {
                                        (f[1]+0.5)*mp.voxel_size_m + mp.origin.y,
                                        (f[2]+0.5)*mp.voxel_size_m + mp.origin.z});
     });
+    // 콕핏 페어링: 정찰 드론 능력 광고
+    bus.enable_pairing(device_id, DeviceType::Scout, "0.1.0",
+                       {"thermal", "rgb", "autonomy", "anchor_dispenser", "investigate_point"});
     bus.start();
 
     // 프런티어 탐사 상태

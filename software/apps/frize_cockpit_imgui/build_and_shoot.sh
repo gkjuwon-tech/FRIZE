@@ -5,8 +5,9 @@ set -e
 HERE="$(cd "$(dirname "$0")" && pwd)"
 IMGUI="${IMGUI_DIR:-/tmp/imgui}"
 OUT="${1:-$HERE/frize_cockpit_imgui.png}"
-TWIN="${2:-/tmp/twin_hero.png}"
-POV="${3:-$HERE/../frize_cockpit/assets/goggle_pov.jpg}"
+TWIN="${2:-$HERE/../../../hardware/renders_studio/twin_cockpit.png}"
+POV="${3:-$HERE/../frize_visor/assets/goggle_ar_view.png}"
+ROSTER="${4:-/tmp/cockpit_roster.json}"
 BUILD=/tmp/fci_build; mkdir -p "$BUILD"
 
 g++ -O2 -std=c++17 \
@@ -18,5 +19,5 @@ g++ -O2 -std=c++17 \
   -lglfw -lGL -ldl -lpthread
 
 echo "[build] ok → $BUILD/frize_cockpit_imgui"
-xvfb-run -a -s "-screen 0 1920x1080x24" "$BUILD/frize_cockpit_imgui" "$OUT" "$IMGUI" "$TWIN" "$POV" "$HERE/control_map.json"
+xvfb-run -a -s "-screen 0 1920x1080x24" "$BUILD/frize_cockpit_imgui" "$OUT" "$IMGUI" "$TWIN" "$POV" "$HERE/control_map.json" "$ROSTER"
 echo "[shoot] → $OUT"

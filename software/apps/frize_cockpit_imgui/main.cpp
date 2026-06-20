@@ -57,7 +57,10 @@ int main(int argc,char** argv){
     const char* twin=argc>3?argv[3]:"/tmp/twin_cockpit.png";
     const char* pov=argc>4?argv[4]:"goggle_ar_view.png";
     const char* mapf=argc>5?argv[5]:"control_map.json";
+    const char* rosterf=argc>6?argv[6]:"/tmp/cockpit_roster.json";
     { std::ifstream f(mapf); if(!f){fprintf(stderr,"no %s\n",mapf);return 1;} f>>CM; }
+    // 라이브 페어링 로스터(frize_cockpit_live 가 실제 MQTT 페어링 후 저장한 SSOT). 없으면 빈 패널.
+    nlohmann::json ROSTER; { std::ifstream f(rosterf); if(f){ try{ f>>ROSTER; }catch(...){} } }
     ev("CORE linked · 4 units · UWB mesh 3 anchors");
     ev("SCOUT  recon_zone  자율 프런티어 탐사 중");
     ev("SCOUT  deploy_anchor  앵커 A3 투하 → 측위망 완성");
@@ -157,8 +160,27 @@ int main(int argc,char** argv){
           DL->AddRect(ImVec2(px,py),ImVec2(px+pw,py+ph),al(TX,0.22f));
           DL->AddCircleFilled(ImVec2(px+10,py+11),3,CRIT); T(MOS,px+18,py+5,TX,("POV · "+tgt+" 고글").c_str()); TR(MOS,px+pw-6,py+5,DIMc,"Tab"); }
 
-        // ── 우: 텔레메트리 + 로그(모노, 구분선 없음) ──
+        // ── 우: 디바이스 링크 / 페어링(라이브 MQTT 로스터) ──
         { float x=WIN_W-RW+10,y=TOP+16,rr=WIN_W-14;
+          int paired = ROSTER.value("paired",0);
+          auto devs = ROSTER.contains("devices")?ROSTER["devices"]:nlohmann::json::array();
+          char hb[64]; std::snprintf(hb,sizeof(hb),"DEVICE LINK  -  PAIRED %d/%d",paired,(int)devs.size());
+          T(MOS,x,y,FNT,hb); TR(MOS,rr,y,DIMc,"[P]"); y+=20;
+          auto tname=[&](const std::string& t)->const char*{ return t=="scout"?"DRONE": t=="visor"?"GOGGLE": t=="apparatus"?"VENT": t.c_str(); };
+          if(devs.empty()){ T(SM,x,y,DIMc,"브로커 미연결 — frize_cockpit_live 대기"); y+=22; }
+          for(auto& d:devs){ std::string id=d.value("device_id",""),pr=d.value("pair","unpaired");
+            bool on=d.value("online",false); ImU32 pc= pr=="paired"?OKc: pr=="pairing"?WARN: pr=="failed"?CRIT:DIMc;
+            DL->AddCircleFilled(ImVec2(x+4,y+6),3,on?pc:al(DIMc,0.6f));
+            T(UIB,x+14,y-1,on?TX:DIMc,tname(d.value("type","")));
+            T(MOS,x+78,y+1,DIMc,id.c_str());
+            TR(MOS,rr,y+1,pc,pr=="paired"?"PAIRED":pr=="pairing"?"PAIRING":pr=="failed"?"FAIL":"--");
+            // 능력 태그(축약) + 라이브 배터리
+            std::string caps; if(d.contains("capabilities")) for(auto& c:d["capabilities"]){ if(!caps.empty())caps+=" / "; caps+=c.get<std::string>(); if(caps.size()>28){caps+="..";break;} }
+            T(MOS,x+14,y+15,DIMc,caps.c_str());
+            if(d.contains("battery_pct")){ char bt[16]; std::snprintf(bt,sizeof(bt),"%.0f%%",d.value("battery_pct",0.0)); TR(MOS,rr,y+15,TX2,bt); }
+            y+=34; }
+          y+=4; DL->AddRectFilled(ImVec2(x,y),ImVec2(rr,y+1),al(LINEc,1)); y+=10;
+
           T(MOS,x,y,FNT,("TELEMETRY  ·  "+tgt).c_str()); y+=22;
           auto row=[&](const char* k,const char* v,float f,ImU32 c){ T(SM,x,y,DIMc,k); TR(MO,rr,y,TX,v); y+=15;
             DL->AddRectFilled(ImVec2(x,y),ImVec2(rr,y+3),al(LINEc,1)); DL->AddRectFilled(ImVec2(x,y),ImVec2(x+(rr-x)*f,y+3),c); y+=15; };

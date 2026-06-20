@@ -91,6 +91,9 @@ int main() {
     bus.subscribe(Topic::ar_cue(device_id), [&](const std::string&, const Envelope& e){
         std::lock_guard<std::mutex> lk(qmtx); arq.push_back(e.as<ArCue>());
     });
+    // 콕핏 페어링: 고글 능력 광고(AR 오버레이/열화상/UWB 측위)
+    bus.enable_pairing(device_id, DeviceType::Visor, "0.1.0",
+                       {"thermal", "ar_overlay", "uwb_position", "first_person_feed"});
     bus.start();
 
     auto ack = [&](const Command& c, CommandStatus s, const std::string& d){

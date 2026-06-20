@@ -213,6 +213,24 @@ struct CommandAck {
     double ts{now_s()};
 };
 
+// ── 페어링(콕핏 ↔ 디바이스 핸드셰이크) ──
+struct PairRequest {
+    std::string device_id;       // 페어링 대상
+    std::string console_id;      // 요청한 콘솔
+    std::string session_id;      // 세션 토큰
+    double ts{now_s()};
+};
+struct PairGrant {
+    std::string device_id;
+    std::string console_id;
+    std::string session_id;
+    bool accepted{true};
+    DeviceType device_type{DeviceType::Visor};
+    std::string fw_version{"0.1.0"};
+    std::vector<std::string> capabilities;   // 예: ["thermal","gas","ar","uwb"]
+    double ts{now_s()};
+};
+
 // 고글 AR 시각 명령(텍스트/화살표/마커/경로/강조/경고)
 struct ArCue {
     std::string cue_id;
@@ -351,6 +369,9 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(VisorTelemetry, device_id, devic
     pos_source, pos_accuracy_m)
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ArCue, cue_id, target_device, kind, text, world_pos, world_to,
     route, color, severity, ttl_s, issued_by, ts)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(PairRequest, device_id, console_id, session_id, ts)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(PairGrant, device_id, console_id, session_id, accepted,
+    device_type, fw_version, capabilities, ts)
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ScoutTelemetry, device_id, device_type, ts, state, link, pose,
     battery_pct, flight_mode, armed, altitude_m, groundspeed_ms, gps_fix, satellites, gas,
     motor_count_ok, flight_time_remaining_s)

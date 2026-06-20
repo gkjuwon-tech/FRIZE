@@ -17,6 +17,7 @@
 #include <memory>
 
 #include "frize/protocol.hpp"
+#include "frize/schemas.hpp"
 
 namespace frize {
 
@@ -45,6 +46,33 @@ public:
     void subscribe(const std::string& topic_filter, BusHandler handler);
 
     void publish(const std::string& topic, const Envelope& env, int qos = 1, bool retain = false);
+
+    // 페어링 응답 자동화: 콕핏이 frize/pair/<id> 로 PairRequest 를 보내면
+    // 디바이스가 스스로 PairGrant 를 frize/pair/<id>/grant 로 retained 발행한다.
+    // (헤더 인라인 — subscribe/publish 프리미티브만으로 구현, 디바이스 main 에서 1줄 호출)
+    void enable_pairing(const std::string& device_id,
+                        DeviceType type,
+                        const std::string& fw_version = "0.1.0",
+                        std::vector<std::string> capabilities = {}) {
+        subscribe(Topic::pair(device_id),
+                  [this, device_id, type, fw_version, capabilities](const std::string&, const Envelope& env) {
+            if (env.type != MessageType::PairRequest) return;
+            PairRequest req;
+            try { req = env.as<PairRequest>(); } catch (...) { return; }
+            PairGrant grant;
+            grant.device_id   = device_id;
+            grant.console_id  = req.console_id;
+            grant.session_id  = req.session_id;
+            grant.accepted    = true;
+            grant.device_type = type;
+            grant.fw_version  = fw_version;
+            grant.capabilities = capabilities;
+            // retained: 늦게 들어온 콕핏도 마지막 페어링 상태를 즉시 본다.
+            publish(Topic::pair_grant(device_id),
+                    Envelope::wrap(MessageType::PairGrant, device_id, grant),
+                    1, true);
+        });
+    }
 
     void start();   // 연결 시작(비동기, 자동 재연결)
     void stop();

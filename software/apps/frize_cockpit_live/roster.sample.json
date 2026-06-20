@@ -1,0 +1,72 @@
+{
+  "broker": "localhost:1883",
+  "console_id": "cockpit-01",
+  "devices": [
+    {
+      "battery_pct": 100.0,
+      "capabilities": [
+        "thermal",
+        "rgb",
+        "autonomy",
+        "anchor_dispenser",
+        "investigate_point"
+      ],
+      "co_ppm": 678.4336770324463,
+      "device_id": "scout-01",
+      "fw": "0.1.0",
+      "o2_pct": 18.95756936598829,
+      "online": true,
+      "pair": "paired",
+      "pos": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "type": "scout"
+    },
+    {
+      "battery_pct": 100.0,
+      "capabilities": [
+        "vent_actuator",
+        "fan_speed",
+        "louver"
+      ],
+      "co_ppm": 66.46811427390384,
+      "device_id": "vent-01",
+      "fw": "0.1.0",
+      "o2_pct": 20.9,
+      "online": true,
+      "pair": "paired",
+      "pos": [
+        6.0,
+        4.0,
+        0.0
+      ],
+      "type": "apparatus"
+    },
+    {
+      "battery_pct": 97.40820497196033,
+      "capabilities": [
+        "thermal",
+        "ar_overlay",
+        "uwb_position",
+        "first_person_feed"
+      ],
+      "co_ppm": 1950.2104880559293,
+      "device_id": "visor-01",
+      "fw": "0.1.0",
+      "o2_pct": 13.333996928973944,
+      "online": true,
+      "pair": "paired",
+      "pos": [
+        75.82065228210233,
+        104.45795083521934,
+        0.0
+      ],
+      "type": "visor"
+    }
+  ],
+  "paired": 3,
+  "session_id": "sess-19ee4cc9d0b0000",
+  "ts": 1781955079.4415073
+}
