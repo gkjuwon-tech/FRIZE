@@ -1,0 +1,387 @@
+{
+  "_doc": "FRIZE 컨트롤 맵 ― 단일 진실원천. 콕핏(ImGui)·콘솔 각인(SCAD)·가이드(PDF)가 모두 이걸 읽는다. 모든 콕핏 액션은 물리 컨트롤 1:1 + 키보드 바인딩.",
+  "version": "1.0",
+  "clusters": {
+    "select": {
+      "title": "UNIT SELECT",
+      "kind": "select",
+      "cols": 7,
+      "rows": 1,
+      "desc": "명령 대상 선택(1택). 선택된 유닛에 COMMAND가 적용된다.",
+      "controls": [
+        {
+          "id": "sel_scout",
+          "label": "SCOUT",
+          "sub": "드론",
+          "key": "1",
+          "col": 0,
+          "target": "scout-01",
+          "led": "cyan"
+        },
+        {
+          "id": "sel_v1",
+          "label": "VISOR-1",
+          "sub": "대원 A",
+          "key": "2",
+          "col": 1,
+          "target": "visor-01",
+          "led": "amber"
+        },
+        {
+          "id": "sel_v2",
+          "label": "VISOR-2",
+          "sub": "대원 B",
+          "key": "3",
+          "col": 2,
+          "target": "visor-02",
+          "led": "green"
+        },
+        {
+          "id": "sel_v3",
+          "label": "VISOR-3",
+          "sub": "대원 C",
+          "key": "4",
+          "col": 3,
+          "target": "visor-03",
+          "led": "green"
+        },
+        {
+          "id": "sel_vent",
+          "label": "VENT-1",
+          "sub": "배연포트",
+          "key": "5",
+          "col": 4,
+          "target": "vent-01",
+          "led": "green"
+        },
+        {
+          "id": "sel_all",
+          "label": "ALL",
+          "sub": "전체",
+          "key": "6",
+          "col": 5,
+          "target": "all",
+          "led": "red"
+        },
+        {
+          "id": "sel_site",
+          "label": "SITE",
+          "sub": "현장뷰",
+          "key": "7",
+          "col": 6,
+          "target": "site",
+          "led": "white"
+        }
+      ]
+    },
+    "command": {
+      "title": "COMMAND MATRIX",
+      "kind": "momentary",
+      "cols": 6,
+      "rows": 3,
+      "desc": "선택 유닛에 명령 발행. 생명직결(빨강)은 CONFIRM 후 발행(안전 인터록).",
+      "controls": [
+        {
+          "id": "cmd_advance",
+          "label": "ADVANCE",
+          "key": "Q",
+          "row": 0,
+          "col": 0,
+          "action": "advance",
+          "color": "amber",
+          "units": [
+            "visor",
+            "all"
+          ]
+        },
+        {
+          "id": "cmd_retreat",
+          "label": "RETREAT",
+          "key": "W",
+          "row": 0,
+          "col": 1,
+          "action": "retreat",
+          "color": "steel",
+          "units": [
+            "visor",
+            "all"
+          ]
+        },
+        {
+          "id": "cmd_hold",
+          "label": "HOLD",
+          "key": "E",
+          "row": 0,
+          "col": 2,
+          "action": "hold",
+          "color": "steel",
+          "units": [
+            "scout",
+            "visor",
+            "all"
+          ]
+        },
+        {
+          "id": "cmd_rally",
+          "label": "RALLY",
+          "key": "R",
+          "row": 0,
+          "col": 3,
+          "action": "rally",
+          "color": "steel",
+          "units": [
+            "visor",
+            "all"
+          ]
+        },
+        {
+          "id": "cmd_recon",
+          "label": "RECON",
+          "key": "T",
+          "row": 0,
+          "col": 4,
+          "action": "recon_zone",
+          "color": "cyan",
+          "units": [
+            "scout"
+          ]
+        },
+        {
+          "id": "cmd_invest",
+          "label": "INVESTG",
+          "sub": "저기조사",
+          "key": "Y",
+          "row": 0,
+          "col": 5,
+          "action": "investigate_point",
+          "color": "cyan",
+          "needs_point": true,
+          "units": [
+            "scout"
+          ]
+        },
+        {
+          "id": "cmd_anchor",
+          "label": "ANCHOR",
+          "sub": "비콘투하",
+          "key": "A",
+          "row": 1,
+          "col": 0,
+          "action": "deploy_anchor",
+          "color": "orange",
+          "units": [
+            "scout"
+          ]
+        },
+        {
+          "id": "cmd_rtl",
+          "label": "RTL",
+          "sub": "복귀",
+          "key": "S",
+          "row": 1,
+          "col": 1,
+          "action": "rtl",
+          "color": "steel",
+          "units": [
+            "scout"
+          ]
+        },
+        {
+          "id": "cmd_land",
+          "label": "LAND",
+          "key": "D",
+          "row": 1,
+          "col": 2,
+          "action": "land",
+          "color": "steel",
+          "units": [
+            "scout"
+          ]
+        },
+        {
+          "id": "cmd_open",
+          "label": "OPEN",
+          "sub": "개방",
+          "key": "F",
+          "row": 1,
+          "col": 3,
+          "action": "open",
+          "color": "amber",
+          "units": [
+            "vent"
+          ]
+        },
+        {
+          "id": "cmd_close",
+          "label": "CLOSE",
+          "sub": "폐쇄",
+          "key": "G",
+          "row": 1,
+          "col": 4,
+          "action": "close",
+          "color": "steel",
+          "units": [
+            "vent"
+          ]
+        },
+        {
+          "id": "cmd_spray",
+          "label": "SPRAY",
+          "sub": "조준방수",
+          "key": "H",
+          "row": 1,
+          "col": 5,
+          "action": "aim_and_spray",
+          "color": "cyan",
+          "needs_point": true,
+          "units": [
+            "vent"
+          ]
+        },
+        {
+          "id": "cmd_ar_text",
+          "label": "AR-TEXT",
+          "sub": "문구",
+          "key": "Z",
+          "row": 2,
+          "col": 0,
+          "action": "ar_text",
+          "color": "amber",
+          "units": [
+            "visor"
+          ]
+        },
+        {
+          "id": "cmd_ar_arrow",
+          "label": "AR-ARROW",
+          "sub": "방향",
+          "key": "X",
+          "row": 2,
+          "col": 1,
+          "action": "ar_arrow",
+          "color": "amber",
+          "needs_point": true,
+          "units": [
+            "visor"
+          ]
+        },
+        {
+          "id": "cmd_ar_route",
+          "label": "AR-ROUTE",
+          "sub": "경로",
+          "key": "C",
+          "row": 2,
+          "col": 2,
+          "action": "ar_route",
+          "color": "amber",
+          "needs_route": true,
+          "units": [
+            "visor"
+          ]
+        },
+        {
+          "id": "cmd_mark",
+          "label": "MARK",
+          "sub": "위험표시",
+          "key": "V",
+          "row": 2,
+          "col": 3,
+          "action": "mark_hazard",
+          "color": "red",
+          "needs_point": true,
+          "units": [
+            "scout",
+            "visor",
+            "vent",
+            "all"
+          ]
+        },
+        {
+          "id": "cmd_force",
+          "label": "FORCE",
+          "sub": "강제진입",
+          "key": "B",
+          "row": 2,
+          "col": 4,
+          "action": "force_entry",
+          "color": "red",
+          "confirm": true,
+          "units": [
+            "visor",
+            "all"
+          ]
+        },
+        {
+          "id": "cmd_confirm",
+          "label": "CONFIRM",
+          "sub": "확인발행",
+          "key": "Enter",
+          "row": 2,
+          "col": 5,
+          "action": "confirm",
+          "color": "green",
+          "units": [
+            "scout",
+            "visor",
+            "vent",
+            "all"
+          ]
+        }
+      ]
+    },
+    "nav": {
+      "title": "NAV",
+      "kind": "encoder",
+      "desc": "트윈/뷰 조작(아날로그).",
+      "controls": [
+        {
+          "id": "enc_layer",
+          "label": "LAYER",
+          "sub": "층/단면",
+          "kind": "encoder",
+          "key": "[ ]",
+          "detail": "회전=층 전환, 누름=단면 토글"
+        },
+        {
+          "id": "enc_zoom",
+          "label": "ZOOM",
+          "sub": "확대",
+          "kind": "encoder",
+          "key": "- +",
+          "detail": "회전=줌, 누름=리셋뷰"
+        }
+      ]
+    },
+    "jog": {
+      "title": "JOG / SELECT",
+      "kind": "jog",
+      "desc": "트윈 카메라 궤도 + 객체 선택.",
+      "controls": [
+        {
+          "id": "jog_main",
+          "label": "JOG",
+          "sub": "궤도/선택",
+          "kind": "jog",
+          "key": "드래그 / Tab",
+          "detail": "회전=카메라 궤도, 밀기=감지/유닛 사이클, 누름=PICK(시야 열기)"
+        }
+      ]
+    },
+    "estop": {
+      "title": "E-STOP",
+      "kind": "estop",
+      "desc": "긴급 ― 전 대원 후퇴 브로드캐스트.",
+      "controls": [
+        {
+          "id": "estop",
+          "label": "E-STOP",
+          "sub": "EVAC ALL",
+          "kind": "estop",
+          "key": "Space x2",
+          "action": "evac_all",
+          "color": "red"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,58 @@
+<!doctype html><html lang=ko><head><meta charset=utf-8>
+<link rel=stylesheet href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+@page{size:A4;margin:14mm 13mm}
+*{box-sizing:border-box}
+body{font-family:"Pretendard",-apple-system,sans-serif;color:#111;font-size:10.5px;line-height:1.5}
+.mono{font-family:"DejaVu Sans Mono",ui-monospace,monospace}
+h1{font-size:26px;letter-spacing:-.5px;margin:0 0 2px}
+h2{font-size:15px;margin:20px 0 8px;border-bottom:2px solid #111;padding-bottom:3px;text-transform:uppercase;letter-spacing:1px}
+h3{font-size:12px;margin:12px 0 5px;background:#111;color:#fff;display:inline-block;padding:2px 8px}
+.bar{height:8px;background:repeating-linear-gradient(45deg,#111 0 8px,#fff 8px 16px);margin:6px 0 14px}
+table{width:100%;border-collapse:collapse;margin:6px 0 10px}
+th,td{border:1px solid #111;padding:4px 6px;text-align:left;vertical-align:top}
+th{background:#111;color:#fff;font-size:9.5px;letter-spacing:.5px}
+td{font-size:10px}
+.key{font-family:"DejaVu Sans Mono",monospace;font-weight:700;background:#eee;border:1px solid #888;border-bottom:2px solid #888;border-radius:3px;padding:0 5px;white-space:nowrap}
+.cover{border:3px solid #111;padding:20px;margin-bottom:14px}
+.cover .sub{font-size:12px;color:#444;margin-top:4px}
+.warn{border:2px solid #c00;color:#900;padding:8px 10px;font-weight:700;margin:10px 0;font-size:10.5px}
+.grid{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin:8px 0}
+.cell{border:1.5px solid #111;padding:5px 4px;min-height:46px}
+.cell b{font-size:10px} .cell .k{float:right;font-size:8.5px}
+.cell .s{display:block;color:#555;font-size:8.5px;margin-top:2px}
+.cell.red{border-color:#c00} .cell.amber{border-color:#c80} .cell.cyan{border-color:#069}
+.pg{page-break-before:always}
+.small{font-size:9px;color:#555}
+footer{position:fixed;bottom:4mm;left:0;right:0;text-align:center;font-size:8px;color:#888}
+</style></head><body>
+<div class=cover>
+<div class=mono style="font-size:11px;letter-spacing:3px">FRIZE COMMAND OS</div>
+<h1>운용 가이드 · OPERATOR FIELD GUIDE</h1>
+<div class=sub>CONSOLE-1 지휘 콘솔 · 콕핏 · 드론(SCOUT) · 고글(VISOR) · 배연포트(VENT) · UWB 앵커</div>
+<div class=mono class=sub style="margin-top:8px">control_map v1.0 · 단일 진실원천 동기화 · 현장 인쇄용</div>
+</div>
+<div class=warn>⚠ 본 장비는 프로토타입이다. 생명직결 명령(빨강 버튼)은 반드시 CONFIRM 후 발행되며 안전 인터록을 통과한 명령만 디바이스로 전달된다. E-STOP은 전 대원 즉시 후퇴다.</div>
+<h2>1. 시스템 개요</h2><div class=bar></div>
+<p>FRIZE는 소방 현장을 하나의 운영체제로 묶는다. 커널(CORE)이 MQTT 버스로 디바이스를 연결하고, 지휘관은 CONSOLE-1에서 3D 디지털 트윈을 보며 물리 버튼으로 명령한다. <b>콕핏 화면의 모든 버튼 = 콘솔의 물리 버튼 = 키보드</b>, 셋이 정확히 같은 기능이다.</p>
+<table><tr><th>기기</th><th>역할</th><th>핵심</th></tr><tr><td>CORE</td><td>지휘 커널(C++)</td><td>월드모델·라우터·안전 인터록·VLM 판단</td></tr><tr><td>SCOUT-1</td><td>정찰 드론</td><td>자율 프런티어 탐사 + 명시적 태스킹 + UWB 앵커 투하</td></tr><tr><td>VISOR-1~3</td><td>스마트 고글</td><td>열화상·가스·AR 표시 + UWB/GPS 측위(NAV 포드)</td></tr><tr><td>VENT-1</td><td>IoT 배연/진입 포트</td><td>원격 개폐(인터록 경유)</td></tr><tr><td>ANCHOR-1</td><td>UWB 측위 비콘</td><td>드론이 투하 → 실내 삼변측량 측위망</td></tr><tr><td>CONSOLE-1</td><td>지휘 콘솔</td><td>물리 컨트롤덱 + 트윈 디스플레이 + E-STOP</td></tr></table>
+<h2>2. 표준 운용 절차 (진입~구조)</h2><div class=bar></div>
+<table><tr><th>단계</th><th>행동</th><th>조작</th></tr><tr><td>①</td><td>측위망 구축</td><td>SCOUT 선투입 → <span class=key>A</span> ANCHOR로 진입구·계단참·분기에 비콘 투하. 대원 위치가 트윈에 점등.</td></tr><tr><td>②</td><td>정찰</td><td><span class=key>T</span> RECON 자율탐사 / 의심구역은 트윈 클릭 후 <span class=key>Y</span> INVESTG('저기 먼저 조사').</td></tr><tr><td>③</td><td>분석</td><td>트윈이 TSDF 표면으로 재구성. 화점·연기·요구조자 표시. NAV 인코더로 층/단면 전환.</td></tr><tr><td>④</td><td>지휘</td><td>대원 선택(<span class=key>1-7</span>) 후 COMMAND. AR로 텍스트/화살표/경로를 고글에 직접.</td></tr><tr><td>⑤</td><td>실행/안전</td><td>생명직결 명령은 CONFIRM. 위급 시 E-STOP(<span class=key>Space×2</span>).</td></tr><tr><td>⑥</td><td>구조·복귀</td><td>요구조자 구조, 드론 <span class=key>S</span> RTL 복귀.</td></tr></table>
+<h2 class=pg>3. CONSOLE-1 컨트롤 맵 (버튼 정의)</h2><div class=bar></div>
+<p class=small>콘솔의 모든 컨트롤과 그 기능. 키 = 콕핏 키보드 단축키. 콘솔 키캡에 동일 라벨이 각인되어 있다.</p>
+<h3>UNIT SELECT — 명령 대상 선택(1택). 선택된 유닛에 COMMAND가 적용된다.</h3>
+<table><tr><th>키</th><th>라벨</th><th>설명</th><th>대상 ID</th></tr><tr><td><span class=key>1</span></td><td>SCOUT</td><td>드론</td><td>scout-01</td></tr><tr><td><span class=key>2</span></td><td>VISOR-1</td><td>대원 A</td><td>visor-01</td></tr><tr><td><span class=key>3</span></td><td>VISOR-2</td><td>대원 B</td><td>visor-02</td></tr><tr><td><span class=key>4</span></td><td>VISOR-3</td><td>대원 C</td><td>visor-03</td></tr><tr><td><span class=key>5</span></td><td>VENT-1</td><td>배연포트</td><td>vent-01</td></tr><tr><td><span class=key>6</span></td><td>ALL</td><td>전체</td><td>all</td></tr><tr><td><span class=key>7</span></td><td>SITE</td><td>현장뷰</td><td>site</td></tr></table>
+<h3>COMMAND MATRIX — 선택 유닛에 명령 발행. 생명직결(빨강)은 CONFIRM 후 발행(안전 인터록).</h3>
+<table><tr><th>키</th><th>버튼</th><th>기능</th><th>비고</th></tr><tr><td><span class=key>Q</span></td><td>ADVANCE</td><td>선택 유닛 전진(대원=AR 전진지시 / 드론=전방이동)</td><td></td></tr><tr><td><span class=key>W</span></td><td>RETREAT</td><td>후퇴 지시(안전 인터록: 항상 허용)</td><td></td></tr><tr><td><span class=key>E</span></td><td>HOLD</td><td>현 위치 정지/호버</td><td></td></tr><tr><td><span class=key>R</span></td><td>RALLY</td><td>집결지로 소집</td><td></td></tr><tr><td><span class=key>T</span></td><td>RECON</td><td>드론 자율 프런티어 탐사 개시(빈 공간 우선)</td><td></td></tr><tr><td><span class=key>Y</span></td><td>INVESTG</td><td>드론에게 &#x27;저기 먼저 조사&#x27; ― 지정점 우선비행 후 자율탐사 재개 (트윈에서 점 찍기)</td><td>지점지정</td></tr><tr><td><span class=key>A</span></td><td>ANCHOR</td><td>UWB 측위 비콘 투하(매거진 1발). 진입 직후 깔아 실내 측위망 구축</td><td></td></tr><tr><td><span class=key>S</span></td><td>RTL</td><td>드론 발사지점 복귀(Return-To-Launch)</td><td></td></tr><tr><td><span class=key>D</span></td><td>LAND</td><td>드론 착륙</td><td></td></tr><tr><td><span class=key>F</span></td><td>OPEN</td><td>VENT-1 배연/진입 포트 개방</td><td></td></tr><tr><td><span class=key>G</span></td><td>CLOSE</td><td>VENT-1 폐쇄</td><td></td></tr><tr><td><span class=key>H</span></td><td>SPRAY</td><td>방수포 조준·방수 (지점 지정)</td><td>지점지정</td></tr><tr><td><span class=key>Z</span></td><td>AR-TEXT</td><td>선택 대원 고글에 텍스트 띄우기</td><td></td></tr><tr><td><span class=key>X</span></td><td>AR-ARROW</td><td>고글에 방향 화살표(지점 지정)</td><td>지점지정</td></tr><tr><td><span class=key>C</span></td><td>AR-ROUTE</td><td>고글에 경로 표시(경유점 지정)</td><td>경로지정</td></tr><tr><td><span class=key>V</span></td><td>MARK</td><td>위험 지점 마킹(트윈+고글 공유)</td><td>지점지정</td></tr><tr><td><span class=key>B</span></td><td>FORCE</td><td>강제 진입 지시 (생명직결 → CONFIRM 필요)</td><td>CONFIRM</td></tr><tr><td><span class=key>Enter</span></td><td>CONFIRM</td><td>무장된(CONFIRM) 명령을 실제 발행 — 안전 인터록 통과분만 디바이스로</td><td></td></tr></table>
+<h3>NAV — 트윈/뷰 조작(아날로그).</h3>
+<table><tr><th>키</th><th>컨트롤</th><th>기능</th></tr><tr><td><span class=key>[ ]</span></td><td>LAYER</td><td>회전=층 전환, 누름=단면 토글</td></tr><tr><td><span class=key>- +</span></td><td>ZOOM</td><td>회전=줌, 누름=리셋뷰</td></tr></table>
+<h3>JOG / SELECT — 트윈 카메라 궤도 + 객체 선택.</h3>
+<table><tr><th>키</th><th>컨트롤</th><th>기능</th></tr><tr><td><span class=key>드래그 / Tab</span></td><td>JOG</td><td>회전=카메라 궤도, 밀기=감지/유닛 사이클, 누름=PICK(시야 열기)</td></tr></table>
+<h3>E-STOP — 긴급 ― 전 대원 후퇴 브로드캐스트.</h3>
+<table><tr><th>키</th><th>컨트롤</th><th>기능</th></tr><tr><td><span class=key>Space x2</span></td><td>E-STOP</td><td>긴급: 전 대원 즉시 후퇴 브로드캐스트</td></tr></table>
+<h2 class=pg>4. 퀵 레퍼런스 카드 (COMMAND MATRIX 배열)</h2><div class=bar></div>
+<p class=small>콘솔 6×3 물리 매트릭스와 동일 배열. 잘라서 콘솔 옆에 붙여라.</p>
+<div class=grid><div class="cell amber"><b>ADVANCE</b><span class=k>Q</span><span class=s></span></div><div class="cell"><b>RETREAT</b><span class=k>W</span><span class=s></span></div><div class="cell"><b>HOLD</b><span class=k>E</span><span class=s></span></div><div class="cell"><b>RALLY</b><span class=k>R</span><span class=s></span></div><div class="cell cyan"><b>RECON</b><span class=k>T</span><span class=s></span></div><div class="cell cyan"><b>INVESTG</b><span class=k>Y</span><span class=s>저기조사</span></div><div class="cell"><b>ANCHOR</b><span class=k>A</span><span class=s>비콘투하</span></div><div class="cell"><b>RTL</b><span class=k>S</span><span class=s>복귀</span></div><div class="cell"><b>LAND</b><span class=k>D</span><span class=s></span></div><div class="cell amber"><b>OPEN</b><span class=k>F</span><span class=s>개방</span></div><div class="cell"><b>CLOSE</b><span class=k>G</span><span class=s>폐쇄</span></div><div class="cell cyan"><b>SPRAY</b><span class=k>H</span><span class=s>조준방수</span></div><div class="cell amber"><b>AR-TEXT</b><span class=k>Z</span><span class=s>문구</span></div><div class="cell amber"><b>AR-ARROW</b><span class=k>X</span><span class=s>방향</span></div><div class="cell amber"><b>AR-ROUTE</b><span class=k>C</span><span class=s>경로</span></div><div class="cell red"><b>MARK</b><span class=k>V</span><span class=s>위험표시</span></div><div class="cell red"><b>FORCE</b><span class=k>B</span><span class=s>강제진입</span></div><div class="cell"><b>CONFIRM</b><span class=k>Enter</span><span class=s>확인발행</span></div></div>
+<p class=small>색 테두리: 빨강=생명직결(CONFIRM) · 황색=주명령 · 청색=지점지정 · 무색=일반.</p>
+<footer class=mono>FRIZE — WE FREEZE THE CHAOS · control_map 단일원천 · 무단 현장 적용 금지(프로토타입)</footer>
+</body></html>

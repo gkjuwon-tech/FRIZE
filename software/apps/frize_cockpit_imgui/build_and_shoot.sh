@@ -10,7 +10,7 @@ POV="${3:-$HERE/../frize_cockpit/assets/goggle_pov.jpg}"
 BUILD=/tmp/fci_build; mkdir -p "$BUILD"
 
 g++ -O2 -std=c++17 \
-  -I"$IMGUI" -I"$IMGUI/backends" -I"$HERE" \
+  -I"$IMGUI" -I"$IMGUI/backends" -I"$HERE" -I"$HERE/../../third_party/nlohmann" \
   "$HERE/main.cpp" \
   "$IMGUI/imgui.cpp" "$IMGUI/imgui_draw.cpp" "$IMGUI/imgui_tables.cpp" "$IMGUI/imgui_widgets.cpp" \
   "$IMGUI/backends/imgui_impl_glfw.cpp" "$IMGUI/backends/imgui_impl_opengl3.cpp" \
@@ -18,5 +18,5 @@ g++ -O2 -std=c++17 \
   -lglfw -lGL -ldl -lpthread
 
 echo "[build] ok → $BUILD/frize_cockpit_imgui"
-xvfb-run -a -s "-screen 0 1920x1080x24" "$BUILD/frize_cockpit_imgui" "$OUT" "$IMGUI" "$TWIN" "$POV"
+xvfb-run -a -s "-screen 0 1920x1080x24" "$BUILD/frize_cockpit_imgui" "$OUT" "$IMGUI" "$TWIN" "$POV" "$HERE/control_map.json"
 echo "[shoot] → $OUT"
