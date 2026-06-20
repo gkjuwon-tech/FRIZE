@@ -71,7 +71,7 @@ void main(){
     vFade=clamp(1.0-(uFrame-aReveal)/6.0,0.0,1.0);   // 갓 찍힌 점 반짝
     vec4 cs=uMVP*vec4(aPos,1.0); gl_Position=cs;
     float d=length(uCam-aPos);
-    gl_PointSize=clamp(150.0/d,1.3,4.2)+vHeat*2.5+vFade*2.0;
+    gl_PointSize=clamp(240.0/d,2.4,8.5)+vHeat*3.0+vFade*2.5;  // 굵은 포인트(저화질 라이브 센서 느낌)
 }
 )";
 static const char* FS=R"(#version 330 core
@@ -151,9 +151,9 @@ int main(int argc,char**argv){
 
     for(int f=0; f<NF; ++f){
         // 느린 궤도 + 살짝 상하 흔들림(현장감)
-        float az=-1.05f + 0.78f*((float)f/NF);   // 천천히 회전
-        float el=0.56f + 0.04f*std::sin(f*0.05f);
-        float dist=span*1.18f;
+        float az=-1.02f + 0.72f*((float)f/NF);   // 천천히 회전
+        float el=0.52f + 0.04f*std::sin(f*0.05f);
+        float dist=span*0.90f;                    // 더 가까이 → 트윈 화면 꽉 채움
         V3 eye={ctr.x+dist*std::cos(az)*std::cos(el), ctr.y+dist*std::sin(az)*std::cos(el), ctr.z+dist*std::sin(el)};
         M4 P=persp(42.f*3.14159f/180.f,(float)W/H,0.4f,400.f), Vm=look(eye,ctr,{0,0,1}), MVP=mul(P,Vm);
         for(int i=0;i<16;i++) cams.push_back(MVP.m[i]);

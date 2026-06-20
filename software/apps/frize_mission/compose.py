@@ -14,7 +14,8 @@ POVR = sys.argv[2] if len(sys.argv)>2 else "/tmp"
 OUTD = os.path.join(DIR,"comp"); os.makedirs(OUTD, exist_ok=True)
 
 M=json.load(open(DIR+"/mission.json")); view=json.load(open(DIR+"/view.json"))
-W,H,NF=view["W"],view["H"],view["nframes"]; FPS=M.get("fps",24)
+NF=view["nframes"]; FPS=M.get("fps",24)
+W,H=1920,1080   # 합성 캔버스 고정. 트윈은 저해상 렌더 → 소프트 업스케일(라이브 느낌). cam aspect 동일(16:9)
 frames=M["frames"]; events=M["events"]; sem=M.get("semantics",[])
 cam=open(DIR+"/cam.bin","rb").read(); CAM=[struct.unpack_from("<16f",cam,i*64) for i in range(NF)]
 try:
@@ -41,6 +42,46 @@ def project(m,x,y,z):
     cx=m[0]*x+m[4]*y+m[8]*z+m[12]; cy=m[1]*x+m[5]*y+m[9]*z+m[13]; cw=m[3]*x+m[7]*y+m[11]*z+m[15]
     if cw<=1e-5: return None
     return ((cx/cw*0.5+0.5)*W,(1-(cy/cw*0.5+0.5))*H)
+def _smooth(a,b,t):
+    if b==a: return 0.0
+    t=max(0.0,min(1.0,(t-a)/(b-a))); return t*t*(3-2*t)
+
+# ── AR 바닥 화살표: 고글 영상 바닥 평면에 원근 투영된 셰브론 경로 ──
+#  소실점 VP 기준, 깊이 z 에 따라 크기/측면이 1/z 로 줄고, phase 로 흐르며,
+#  turn 으로 먼 쪽이 좌/우로 휘어(코너 진입). retreat 는 카메라 쪽으로 향함.
+def ar_floor(d, panel, flocal, mode, turn=0.0, col=(120,178,224), label="", dist=None):
+    px,py,pw,ph=panel
+    sway=math.sin(flocal*0.09)*0.020                    # 핸드헬드 흔들림(움직이면 바뀜)
+    vpx=px+pw*(0.52+turn*0.16+sway); vpy=py+ph*0.40; BY=py+ph*0.985
+    N=8; flowdir=-1.0 if mode=="retreat" else 1.0
+    phase=(flocal*0.05*flowdir)%1.0
+    pts=[]
+    for i in range(N+1):
+        t=(i+phase)/N
+        if t<0: t+=1.0
+        if t>1.0: continue
+        z=1.0/max(0.06,1.0-t*0.90); persp=1.0/z          # 원근(근1 → 원~10)
+        y=vpy+(BY-vpy)*persp
+        lat=turn*_smooth(0.32,0.96,t)                    # 먼 쪽에서 휘어짐
+        x=vpx+(pw*0.66)*lat*persp
+        pts.append((x,y,persp,t))
+    pts.sort(key=lambda p:p[3])
+    for k in range(len(pts)-1):                          # 바닥 경로선(발광)
+        a=0.14+0.44*pts[k][2]
+        d.line([pts[k][0],pts[k][1],pts[k+1][0],pts[k+1][1]],fill=al(col,a),width=max(1,int(2*pts[k][2])))
+    for (x,y,persp,t) in pts:                            # 셰브론(원근 폭, 바닥에 누움)
+        w=pw*0.15*persp; h=w*0.72; a=0.26+0.74*persp; lw=max(2,int(3.4*persp))
+        apex=(x,y+h) if mode=="retreat" else (x,y-h)
+        d.line([x-w,y,apex[0],apex[1]],fill=al(col,a),width=lw)
+        d.line([x+w,y,apex[0],apex[1]],fill=al(col,a),width=lw)
+    if pts:                                              # 타깃 브라켓 + 라벨/거리(경로 끝)
+        fx,fy,_,_=pts[-1]; b=13; cy=fy-20
+        for q in [(-1,-1),(1,-1),(-1,1),(1,1)]:
+            ex=fx+q[0]*b; ey=cy+q[1]*b
+            d.line([ex,ey,ex-q[0]*7,ey],fill=col,width=2); d.line([ex,ey,ex,ey-q[1]*7],fill=col,width=2)
+        if label: d.text((fx,cy-b-12),label,font=m12,fill=col,anchor="mm")
+        if dist is not None: d.text((fx,cy+b+8),f"{dist:.1f}m",font=m12,fill=col,anchor="mm")
+
 def hangul(s): return any('가'<=ch<='힣' for ch in s)
 def T(d,xy,s,fill,mono=True,sz=14):
     f=(Fc(sz) if not hangul(s) else Fk(sz)) if False else None
@@ -71,11 +112,11 @@ def vget(x,y): return {"x":x,"y":y,"z":0.4}
 gas=sx("gas_range") or vget(5.4,1.05)
 CH=[
  dict(a=0,  b=80, code="01",title="진입 · 디지털 트윈 재구성",wearer="VISOR-1",pov="pov_v1",telem="normal",action=None,alert=None),
- dict(a=80, b=168,code="02",title="생존자 탐지 · AR 구조 유도",wearer="VISOR-2",pov="pov_v2",telem="normal",action=("ar_route",vget(2.6,9.8)),alert=("SURVIVOR","NW 병실 · 비반응 인원 1")),
- dict(a=168,b=252,code="03",title="위험대원 · AR 후퇴 명령",wearer="VISOR-3",pov="pov_v3",telem="danger",action=("ar_retreat",None),alert=("DANGER","VISOR-3  O2 16%  CO 1100ppm  SCBA 38bar  -> RETREAT")),
- dict(a=252,b=330,code="04",title="백드래프트 경보 · 전대원 정지",wearer="VISOR-1",pov="pov_v1",telem="warn",action=("estop",None),alert=("BACKDRAFT","북측 화점 급팽창 · 플래시오버 위험 -> ALL STOP")),
- dict(a=330,b=410,code="05",title="가스레인지 누출 · 차단 지시",wearer="VISOR-2",pov="pov_v2",telem="warn",action=("gas",gas),alert=("GAS","주방 LEL 28% -> 원격 밸브 CLOSE")),
- dict(a=410,b=NF, code="06",title="2차 생존자 확보 · 상황 정리",wearer="VISOR-1",pov="pov_v3",telem="normal",action=("ar_route",vget(22.8,2.2)),alert=("SURVIVOR","SE 끝방 · 요구조자 확보")),
+ dict(a=80, b=168,code="02",title="생존자 탐지 · AR 구조 유도",wearer="VISOR-2",pov="pov_v2",telem="normal",action=("ar_route",vget(2.6,9.8)),alert=("SURVIVOR","NW 병실 · 비반응 인원 1"),turn=-0.55),
+ dict(a=168,b=252,code="03",title="위험대원 · AR 후퇴 명령",wearer="VISOR-3",pov="pov_v3",telem="danger",action=("ar_retreat",None),alert=("DANGER","VISOR-3  O2 16%  CO 1100ppm  SCBA 38bar  -> RETREAT"),turn=0.0),
+ dict(a=252,b=330,code="04",title="백드래프트 경보 · 전대원 정지",wearer="VISOR-1",pov="pov_v1",telem="warn",action=("estop",None),alert=("BACKDRAFT","북측 화점 급팽창 · 플래시오버 위험 -> ALL STOP"),turn=0.0),
+ dict(a=330,b=410,code="05",title="가스레인지 누출 · 차단 지시",wearer="VISOR-2",pov="pov_v2",telem="warn",action=("gas",gas),alert=("GAS","주방 LEL 28% -> 원격 밸브 CLOSE"),turn=0.42),
+ dict(a=410,b=NF, code="06",title="2차 생존자 확보 · 상황 정리",wearer="VISOR-1",pov="pov_v3",telem="normal",action=("ar_route",vget(22.8,2.2)),alert=("SURVIVOR","SE 끝방 · 요구조자 확보"),turn=0.5),
 ]
 def chap(f):
     for c in CH:
@@ -106,7 +147,7 @@ LOG=build_log()
 
 def compose(f):
     img=Image.open(os.path.join(DIR,"frames",f"twin_{f:04d}.png")).convert("RGB")
-    if img.size!=(W,H): img=img.resize((W,H))
+    if img.size!=(W,H): img=img.resize((W,H),Image.BILINEAR)   # 소프트 업스케일(뭉개진 라이브 센서감)
     m=CAM[f]; fr=frames[f]; c=chap(f); flocal=f-c["a"]; aw=c["wearer"]
     agents={a["id"]:a for a in fr["agents"]}
     d=ImageDraw.Draw(img,"RGBA")
@@ -210,32 +251,24 @@ def compose(f):
     t0=TEL[c["telem"]]
     d.text((px+pw-5-tw(d,"LIVE",m12),py+3),"LIVE",font=m12,fill=RED)
     d.text((px+5,py+ph-16),f"{t0[0][0]}{t0[0][1]}  {t0[3][0]}{t0[3][1]}",font=m12,fill=al((230,230,230),0.9))
-    # AR 오버레이(텍스트 위주, 미니멀)
+    # AR 오버레이 ― 고글 영상 바닥에 원근 투영된 화살표 경로(흐르고, 코너에서 휨)
     act=c["action"]
     if act:
-        kind=act[0]
-        if kind in("ar_route","gas"):
-            d.rectangle([px,py+18,px+pw,py+36],fill=al((10,28,44),0.7))
-            d.text((px+5,py+20),("AR> gas shutoff point" if kind=="gas" else "AR> route to survivor"),font=m13,fill=CYN)
-            tgt=act[1]; ex_,ey_=px+pw*0.66,py+ph*0.42; cxp,cyp=px+pw*0.5,py+ph*0.84
-            for k in range(5):
-                t=(k+(flocal*0.1)%1)/5; sx=cxp+(ex_-cxp)*t; sy=cyp+(ey_-cyp)*t; s=4+5*t
-                d.line([sx-s,sy+s,sx,sy],fill=CYN,width=2); d.line([sx+s,sy+s,sx,sy],fill=CYN,width=2)
-            bw=26; tc=RED if kind=="ar_route" else AMB
-            for q in [(-1,-1),(1,-1),(-1,1),(1,1)]:
-                exx=ex_+q[0]*bw; eyy=ey_+q[1]*bw
-                d.line([exx,eyy,exx-q[0]*10,eyy],fill=tc,width=1); d.line([exx,eyy,exx,eyy-q[1]*10],fill=tc,width=1)
-            d.text((ex_-bw,ey_-bw-14),"TARGET",font=m12,fill=tc)
+        kind=act[0]; tn=c.get("turn",0.0)
+        if kind in ("ar_route","gas"):
+            col=CYN if kind=="ar_route" else AMB
+            d.rectangle([px,py+18,px+pw,py+38],fill=al((10,28,44) if kind=="ar_route" else (40,30,8),0.66))
+            d.text((px+6,py+21),("AR> 바닥 경로 · 가스 차단지점" if kind=="gas" else "AR> 바닥 경로 · 요구조자"),font=k13,fill=col)
+            ar_floor(d,(px,py,pw,ph),flocal,"route",turn=tn,col=col,
+                     label=("GAS-OFF" if kind=="gas" else "SURVIVOR"),dist=max(1.5,11.0-flocal*0.05))
         elif kind=="ar_retreat":
-            d.rectangle([px,py+18,px+pw,py+36],fill=al((44,10,8),0.78)); d.text((px+5,py+20),"AR> RETREAT — EXIT 8m",font=m13,fill=RED)
-            cxp,cyp=px+pw*0.5,py+ph*0.55
-            for k in range(4):
-                t=(k+(flocal*0.16)%1)/4; sx=cxp-(pw*0.32)*t; s=8+9*t
-                d.line([sx+s,cyp-s,sx,cyp],fill=RED,width=3); d.line([sx+s,cyp+s,sx,cyp],fill=RED,width=3)
+            d.rectangle([px,py+18,px+pw,py+38],fill=al((44,10,8),0.74)); d.text((px+6,py+21),"AR> 즉시 후퇴 · EXIT",font=k13,fill=RED)
+            ar_floor(d,(px,py,pw,ph),flocal,"retreat",turn=tn,col=RED,label="EXIT",dist=max(2.0,9.0-flocal*0.04))
         elif kind=="estop":
-            d.rectangle([px,py+18,px+pw,py+36],fill=al((44,10,8),0.78)); d.text((px+5,py+20),"** ALL STOP — EVACUATE **",font=m13,fill=RED)
-    if act and act[0]=="ar_route" and flocal>(c["b"]-c["a"])*0.7:
-        d.text((px+pw*0.5,py+ph*0.5),"[ SURVIVOR SECURED ]",font=m14,fill=GRN,anchor="mm")
+            d.rectangle([px,py+18,px+pw,py+38],fill=al((44,10,8),0.78)); d.text((px+pw*0.5,py+28),"■ ALL STOP — EVACUATE",font=k14,fill=RED,anchor="mm")
+    if act and act[0]=="ar_route" and flocal>(c["b"]-c["a"])*0.74:
+        d.rectangle([px+pw*0.30,py+ph*0.45,px+pw*0.70,py+ph*0.57],fill=al((10,40,24),0.6))
+        d.text((px+pw*0.5,py+ph*0.51),"[ SURVIVOR SECURED ]",font=m14,fill=GRN,anchor="mm")
 
     # ── 알림: 반전 모노 바(스트라이프 없음) ──
     if c["alert"]:
