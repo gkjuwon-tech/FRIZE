@@ -36,9 +36,26 @@
 | 가스 CO/O2/LEL/H2S | I2C/아날로그 → MCU | AFE→MCU ADC/I2C | (MCU 펌웨어가 CSV로) |
 | 열화상 FLIR Boson | CSI(GMSL2) | SerDes→Jetson CSI0 | `FRIZE_THERMAL_DEV=/dev/video0` |
 | RGB 저조도 | CSI(GMSL2) | SerDes→Jetson CSI1 | `/dev/video1` |
-| GNSS ZED-F9P | UART | →Jetson UART | gpsd/내부 |
+| GNSS ZED-F9P | UART | →Jetson UART | 옥외 측위, gpsd/내부 |
+| UWB DWM3000 (NAV 포드) | SPI0 + IRQ + RST | →Jetson SPI0 (CS0) | 실내 정밀측위, `FRIZE_UWB_DEV=/dev/spidev0.0` |
 | AR 디스플레이 | DSI/DP | →Jetson DP | EGL |
 | 5G/메시/WiFi | M.2/USB | →Jetson | 자동 |
+
+> **측위 융합(NAV 포드):** 실내=UWB 삼변측량(앵커 3+), 옥외=GNSS, 둘 다 약하면
+> IMU 추측항법으로 폴백. `frize_visor`가 융합해 `VisorTelemetry.pose`(+`pos_source`,
+> `pos_accuracy_m`)로 송출 → 코어 월드모델 → 콕핏 트윈에 대원 위치 점으로 표시.
+
+### NAV 포드 커넥터 핀아웃 (JST-GH 8핀, → Jetson SPI0/UART)
+| 핀 | 신호 | 비고 |
+|---|---|---|
+| 1 | 3.3V | UWB+GNSS 전원 |
+| 2 | GND | 🟥 공통 |
+| 3 | SPI SCLK | DWM3000 |
+| 4 | SPI MOSI | DWM3000 |
+| 5 | SPI MISO | DWM3000 |
+| 6 | UWB IRQ | DWM3000 인터럽트 |
+| 7 | UWB RST | 리셋 |
+| 8 | GNSS UART TX | ZED-F9P → Jetson RX |
 
 ### 센서 MCU 커넥터 핀아웃 (JST-GH 6핀, → Jetson USB)
 | 핀 | 신호 | 비고 |
