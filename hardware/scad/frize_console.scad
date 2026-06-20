@@ -30,7 +30,9 @@ module deck(){
             translate([0,-D/2-2,-8]) rotate([32,0,0]) cube([W+8,60,46],center=true);  // 앞 손목 베벨
             for(s=[-1,1]) translate([s*(W/2-2),40,Hb/2]) rotate([0,90,0]) vent(4,80,3,9);
         }
-        m("rubber",C_RUBBER) translate([0,-D/2+16,Hb-12]) rotate([32,0,0]) rbox([W-40,40,6],3,10); // 손목받침
+        // 손목받침: 데크는 중앙기준(±Hb/2)이므로 상면=+Hb/2. 앞 베벨 위에 안착하도록
+        // 로컬 z=Hb/2-7(=세계 z≈72)에 두고 32° 기울여 데크 상면에 박히게(공중부양 방지).
+        m("rubber",C_RUBBER) translate([0,-D/2+18,Hb/2-7]) rotate([32,0,0]) rbox([W-40,40,7],3,10);
     }
 }
 
