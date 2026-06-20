@@ -54,9 +54,9 @@ def setup_world():
     mp=nt.nodes.new("ShaderNodeMapping"); tc=nt.nodes.new("ShaderNodeTexCoord")
     mp.inputs['Rotation'].default_value[2]=math.radians(95)
     nt.links.new(tc.outputs['Generated'],mp.inputs['Vector']); nt.links.new(mp.outputs['Vector'],tex.inputs['Vector'])
-    lite=nt.nodes.new("ShaderNodeBackground"); lite.inputs[1].default_value=0.5
+    lite=nt.nodes.new("ShaderNodeBackground"); lite.inputs[1].default_value=0.28
     nt.links.new(tex.outputs['Color'],lite.inputs[0])
-    dark=nt.nodes.new("ShaderNodeBackground"); dark.inputs[0].default_value=(0.008,0.010,0.013,1); dark.inputs[1].default_value=1.0
+    dark=nt.nodes.new("ShaderNodeBackground"); dark.inputs[0].default_value=(0.006,0.008,0.011,1); dark.inputs[1].default_value=1.0
     lp=nt.nodes.new("ShaderNodeLightPath"); mix=nt.nodes.new("ShaderNodeMixShader")
     nt.links.new(lp.outputs['Is Camera Ray'],mix.inputs[0])
     nt.links.new(lite.outputs[0],mix.inputs[1]); nt.links.new(dark.outputs[0],mix.inputs[2])
@@ -66,8 +66,8 @@ def floor():
     bpy.ops.mesh.primitive_plane_add(size=120, location=(0,0,0))
     o=bpy.context.active_object; m=bpy.data.materials.new("floor"); m.use_nodes=True
     b=m.node_tree.nodes['Principled BSDF']
-    b.inputs['Base Color'].default_value=(0.015,0.017,0.020,1)
-    b.inputs['Roughness'].default_value=0.14; b.inputs['Metallic'].default_value=0.0
+    b.inputs['Base Color'].default_value=(0.010,0.011,0.013,1)
+    b.inputs['Roughness'].default_value=0.09; b.inputs['Metallic'].default_value=0.0
     o.data.materials.append(m)
 
 def lights(center, rad):
@@ -77,9 +77,9 @@ def lights(center, rad):
         o=bpy.data.objects.new("L",l); bpy.context.collection.objects.link(o); o.location=loc
         o.rotation_euler=(center-mathutils.Vector(loc)).to_track_quat('-Z','Y').to_euler(); return o
     s=rad*2.2
-    area(center+mathutils.Vector((-1.0,-1.4,1.6))*s, 1400*rad*rad, 1.6*rad, (1.0,0.93,0.82))
-    area(center+mathutils.Vector(( 1.3, 1.1,1.0))*s,  900*rad*rad, 1.4*rad, (0.62,0.74,1.0))
-    area(center+mathutils.Vector(( 1.4,-1.0,0.5))*s,  350*rad*rad, 2.0*rad, (1.0,0.86,0.7))
+    area(center+mathutils.Vector((-1.0,-1.3,1.5))*s, 1700*rad*rad, 1.4*rad, (1.0,0.92,0.80))  # 키(따뜻)
+    area(center+mathutils.Vector(( 1.4, 1.2,0.8))*s, 1500*rad*rad, 1.1*rad, (0.55,0.70,1.0))  # 쿨 림(엣지 글로)
+    area(center+mathutils.Vector(( 1.5,-1.1,0.35))*s, 300*rad*rad, 2.0*rad, (1.0,0.84,0.66))  # 약한 필
 
 # ── 재질 ──
 def _p(name):
@@ -89,7 +89,7 @@ def _coat(b,v):
         if c in b.inputs: b.inputs[c].default_value=v; break
 def mat_body(base):
     m,b=_p("body"); b.inputs['Base Color'].default_value=(*base,1)
-    b.inputs['Metallic'].default_value=0.2; b.inputs['Roughness'].default_value=0.40; _coat(b,0.4); return m
+    b.inputs['Metallic'].default_value=0.0; b.inputs['Roughness'].default_value=0.52; _coat(b,0.18); return m
 def mat_metal():
     m,b=_p("metal"); b.inputs['Base Color'].default_value=(0.64,0.66,0.69,1)
     b.inputs['Metallic'].default_value=1.0; b.inputs['Roughness'].default_value=0.30; return m
@@ -169,7 +169,7 @@ def frame(parts,az,el,lens,margin):
 JOBS=[
     dict(name="console", base=(0.045,0.048,0.056), az=22, el=15, zrot=0, lens=60, margin=1.5,
          groups=["body","screen","metal","accent","rubber"]),
-    dict(name="scout",   stl="scout.stl", base=(0.018,0.020,0.026), az=46, el=24, zrot=25, lens=76, margin=1.45),
+    dict(name="scout",   stl="scout.stl", base=(0.018,0.020,0.026), az=46, el=17, zrot=25, lens=84, margin=1.18),
     dict(name="visor",   stl="visor.stl", base=(0.024,0.026,0.034), az=40, el=18, zrot=0,  lens=80, margin=1.4),
     dict(name="vent",    stl="vent.stl",  base=(0.09,0.09,0.04),    az=42, el=22, zrot=20, lens=78, margin=1.45),
 ]
