@@ -51,6 +51,42 @@ struct Mesh {
         for (size_t i=0;i<v.size();++i) c[i]=thermal_color(i<temp.size()?temp[i]:std::numeric_limits<float>::quiet_NaN());
     }
 
+    // Taubin λ|μ 스무딩 ― 스캔 노이즈('찰흙' 블록감)를 매끈한 표면으로.
+    // 양(λ)·음(μ) 라플라시안을 번갈아 적용해 부피 수축 없이 평활화.
+    // 온도도 같이 평활해 열화상 얼룩을 줄인다. 마지막에 법선 재계산.
+    void smooth_taubin(int iters=3, float lambda=0.34f, float mu=-0.35f){
+        if (v.empty()||idx.empty()) return;
+        const size_t N=v.size();
+        std::vector<Vec3f> acc(N); std::vector<int> cnt(N);
+        auto step=[&](float f){
+            std::fill(acc.begin(),acc.end(),Vec3f{0,0,0});
+            std::fill(cnt.begin(),cnt.end(),0);
+            for (size_t t=0;t<idx.size();t+=3){
+                uint32_t a=idx[t],b=idx[t+1],c2=idx[t+2];
+                acc[a]=acc[a]+v[b]+v[c2]; cnt[a]+=2;
+                acc[b]=acc[b]+v[a]+v[c2]; cnt[b]+=2;
+                acc[c2]=acc[c2]+v[a]+v[b]; cnt[c2]+=2;
+            }
+            for (size_t i=0;i<N;++i) if(cnt[i]>0){
+                Vec3f centroid=acc[i]*(1.0f/cnt[i]);
+                v[i]=v[i]+(centroid-v[i])*f;
+            }
+        };
+        for (int it=0; it<iters; ++it){ step(lambda); step(mu); }  // 위치만 평활(온도 보존)
+        recompute_normals();
+    }
+
+    void recompute_normals(){
+        n.assign(v.size(), Vec3f{0,0,0});
+        for (size_t t=0;t<idx.size();t+=3){
+            uint32_t a=idx[t],b=idx[t+1],cc=idx[t+2];
+            Vec3f e1=v[b]-v[a], e2=v[cc]-v[a];
+            Vec3f fn{e1.y*e2.z-e1.z*e2.y, e1.z*e2.x-e1.x*e2.z, e1.x*e2.y-e1.y*e2.x};
+            n[a]=n[a]+fn; n[b]=n[b]+fn; n[cc]=n[cc]+fn;
+        }
+        for (auto& nn:n){ float L=norm(nn); if(L>1e-9f) nn=nn*(1.0f/L); else nn={0,0,1}; }
+    }
+
     // ── OBJ (정점 컬러 확장: v x y z r g b) ───────────────────────────────────
     bool write_obj(const std::string& path) const {
         std::ofstream f(path); if(!f) return false;

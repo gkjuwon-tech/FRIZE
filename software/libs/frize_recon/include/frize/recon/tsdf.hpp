@@ -61,8 +61,8 @@ public:
         if (d < 1e-4f) return;
         Vec3f u = ray * (1.0f/d);
         // 표면 앞쪽 자유공간 카빙: [r0, d-trunc] 약한 가중치로 sdf=+1 방향.
-        // 카빙은 셀당 1샘플(step=vs_)이면 충분 — 성능을 위해 거칠게.
-        float carve_step = vs_;
+        // 자유공간/프런티어 판정엔 거친 샘플이면 충분 → 1.6셀 간격으로 속도↑.
+        float carve_step = vs_ * 1.6f;
         float carve_end = d - trunc_;
         for (float r = std::max(carve_step, d - max_carve_); r < carve_end; r += carve_step) {
             Vec3f p = s + u * r;
@@ -126,7 +126,7 @@ private:
 
     Vec3f origin_; int nx_, ny_, nz_; float vs_, trunc_;
     static constexpr float W_MAX = 64.0f;
-    float max_carve_ = 14.0f;          // 자유공간 카빙 최대 거리(m)
+    float max_carve_ = 10.0f;          // 자유공간 카빙 최대 거리(m)
     std::vector<TsdfCell> cells_;
 };
 

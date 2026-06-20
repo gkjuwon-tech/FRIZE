@@ -124,8 +124,10 @@ int main(int argc, char** argv){
         }
     }
 
-    // 최종 재구성
+    // 최종 재구성 + Taubin 스무딩(찰흙 → 매끈한 실제 표면)
     Mesh mesh = marching_cubes(vol);
+    int smooth_it = std::getenv("FRIZE_SMOOTH") ? std::atoi(std::getenv("FRIZE_SMOOTH")) : 3;
+    if (smooth_it>0) mesh.smooth_taubin(smooth_it);
     int frontier_final = count_frontiers(vol);
     frontier_log.push_back({1.0, frontier_final});
 

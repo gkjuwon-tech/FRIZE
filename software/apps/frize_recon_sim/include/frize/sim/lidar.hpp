@@ -28,46 +28,51 @@ inline void rot_zy(float yaw, float pitch, Vec3f& fwd, Vec3f col[3]){
 struct Lidar {
     float az_fov, el_lo, el_hi, far, range_sigma, dropout;
     int az_n, el_n;
-    std::mt19937 rng;
+    unsigned seed;
 
     Lidar(float az_fov_, int az_n_, float el_lo_, float el_hi_, int el_n_,
-          float far_, float sigma, float drop, unsigned seed)
+          float far_, float sigma, float drop, unsigned seed_)
         : az_fov(az_fov_), el_lo(el_lo_), el_hi(el_hi_), far(far_),
-          range_sigma(sigma), dropout(drop), az_n(az_n_), el_n(el_n_), rng(seed) {}
+          range_sigma(sigma), dropout(drop), az_n(az_n_), el_n(el_n_), seed(seed_) {}
 
-    // 한 자세에서 한 번 스윕. sensor_pos 반환(엔진 카빙 시작점).
+    // 한 자세에서 한 번 스윕. OpenMP로 레이를 병렬 캐스팅(결정론적 노이즈).
     std::vector<ScanPoint> scan(const Building& b, const Vec3f& pos, float yaw, float pitch){
-        std::vector<ScanPoint> out;
         Vec3f fwd, col[3]; rot_zy(yaw,pitch,fwd,col);
-        std::uniform_real_distribution<float> uni(0.f,1.f);
-        std::normal_distribution<float> noise(0.f, range_sigma);
         bool full = az_fov >= 6.28f;
-        for (int ai=0; ai<az_n; ++ai){
+        const int R = az_n*el_n;
+        std::vector<ScanPoint> tmp(R); std::vector<uint8_t> ok(R,0);
+        uint32_t base = seed*2654435761u
+            ^ (uint32_t)(pos.x*131.1f) ^ (uint32_t)(pos.y*977.3f) ^ (uint32_t)(yaw*613.7f);
+        #pragma omp parallel for schedule(static)
+        for (int k=0;k<R;++k){
+            int ai=k/el_n, ei=k%el_n;
             float a = full ? (-3.14159265f + 6.28318f*ai/az_n)
                            : (-az_fov/2 + az_fov*ai/std::max(1,az_n-1));
-            for (int ei=0; ei<el_n; ++ei){
-                float e = el_lo + (el_hi-el_lo)*ei/std::max(1,el_n-1);
-                float ce=std::cos(e);
-                // 로컬 방향(+x 전방, +z 위) → 월드
-                Vec3f ld{ ce*std::cos(a), ce*std::sin(a), std::sin(e) };
-                Vec3f d{ col[0].x*ld.x+col[1].x*ld.y+col[2].x*ld.z,
-                         col[0].y*ld.x+col[1].y*ld.y+col[2].y*ld.z,
-                         col[0].z*ld.x+col[1].z*ld.y+col[2].z*ld.z };
-                float t; int bi;
-                if (!b.raycast(pos, d, far, t, bi)) continue;
-                if (uni(rng) < dropout) continue;               // 연기 드롭아웃
-                t += noise(rng);
-                Vec3f p{ pos.x+d.x*t, pos.y+d.y*t, pos.z+d.z*t };
-                float temp = b.box_temp(bi);
-                if (std::isnan(temp)){                            // 복사열 블리드
-                    float dx=p.x-b.fire.x, dy=p.y-b.fire.y, dz=p.z-b.fire.z;
-                    float r=std::sqrt(dx*dx+dy*dy+dz*dz);
-                    float warm = 240.0f/(1.0f+std::pow(r,1.7f));
-                    if (warm>20.0f) temp=std::min(warm,240.0f);
-                }
-                out.push_back({p, temp});
+            float e = el_lo + (el_hi-el_lo)*ei/std::max(1,el_n-1);
+            float ce=std::cos(e);
+            Vec3f ld{ ce*std::cos(a), ce*std::sin(a), std::sin(e) };
+            Vec3f d{ col[0].x*ld.x+col[1].x*ld.y+col[2].x*ld.z,
+                     col[0].y*ld.x+col[1].y*ld.y+col[2].y*ld.z,
+                     col[0].z*ld.x+col[1].z*ld.y+col[2].z*ld.z };
+            float t; int bi;
+            if (!b.raycast(pos, d, far, t, bi)) continue;
+            uint32_t h=base+ (uint32_t)k*2246822519u;
+            float r0=( (h^(h>>15))*0x2C1B3C6Du & 0xFFFFFF)/float(0x1000000);
+            if (r0 < dropout) continue;
+            float r1=( ((h*0x9E3779B1u)^(h>>13)) & 0xFFFFFF)/float(0x1000000);
+            t += (r1*2.f-1.f)*range_sigma*1.7f;           // 결정론적 거리노이즈
+            Vec3f p{ pos.x+d.x*t, pos.y+d.y*t, pos.z+d.z*t };
+            float temp = b.box_temp(bi);
+            if (std::isnan(temp)){
+                float dx=p.x-b.fire.x, dy=p.y-b.fire.y, dz=p.z-b.fire.z;
+                float r=std::sqrt(dx*dx+dy*dy+dz*dz);
+                float warm = 240.0f/(1.0f+std::pow(r,1.7f));
+                if (warm>20.0f) temp=std::min(warm,240.0f);
             }
+            tmp[k]={p,temp}; ok[k]=1;
         }
+        std::vector<ScanPoint> out; out.reserve(R/2);
+        for (int k=0;k<R;++k) if(ok[k]) out.push_back(tmp[k]);
         return out;
     }
 };
