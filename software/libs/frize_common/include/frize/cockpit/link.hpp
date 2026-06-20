@@ -178,6 +178,30 @@ public:
         return n;
     }
 
+    // ── AR 유도: 트윈에서 목표점 찍고 대원 찍기 ──
+    //  내비 서비스가 대원 실시간 위치마다 경로를 재계산해 고글에 ArCue(Route)를
+    //  스트리밍한다. (페어링된 대원만 허용)
+    bool guide(const std::string& wearer_id, const Vec3& target,
+               const std::string& label = "목표", const std::string& color = "#36c0ff") {
+        {
+            std::lock_guard<std::mutex> lk(mtx_);
+            auto it = devs_.find(wearer_id);
+            if (it == devs_.end() || it->second.pair != PairState::Paired) return false;
+        }
+        GuideRequest gr;
+        gr.wearer_id = wearer_id; gr.target = target; gr.label = label;
+        gr.color = color; gr.active = true; gr.issued_by = console_id_;
+        bus_.publish(Topic::guide(wearer_id),
+                     Envelope::wrap(MessageType::GuideRequest, console_id_, gr), 1, true);
+        return true;
+    }
+    void stop_guide(const std::string& wearer_id) {
+        GuideRequest gr;
+        gr.wearer_id = wearer_id; gr.active = false; gr.issued_by = console_id_;
+        bus_.publish(Topic::guide(wearer_id),
+                     Envelope::wrap(MessageType::GuideRequest, console_id_, gr), 1, true);
+    }
+
     bool connected() const { return bus_.connected(); }
     const std::string& session_id() const { return session_id_; }
     const std::string& console_id() const { return console_id_; }

@@ -231,6 +231,18 @@ struct PairGrant {
     double ts{now_s()};
 };
 
+// 유도 요청(콕핏 → 내비 서비스): 대원에게 목표점 설정 또는 해제.
+//  트윈에서 목표 찍고 대원 찍으면 콕핏이 이걸 발행 → 내비가 경로를 계속 갱신.
+struct GuideRequest {
+    std::string wearer_id;                 // 유도 대상 대원(고글)
+    std::optional<Vec3> target{};          // 목표점(site_enu). 없으면 해제.
+    std::string label{"목표"};             // 표시 라벨(요구조자/출구/가스밸브…)
+    std::string color{"#36c0ff"};          // 경로 색
+    bool active{true};                     // false=유도 중지
+    std::string issued_by{"console"};
+    double ts{now_s()};
+};
+
 // 고글 AR 시각 명령(텍스트/화살표/마커/경로/강조/경고)
 struct ArCue {
     std::string cue_id;
@@ -369,6 +381,7 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(VisorTelemetry, device_id, devic
     pos_source, pos_accuracy_m)
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ArCue, cue_id, target_device, kind, text, world_pos, world_to,
     route, color, severity, ttl_s, issued_by, ts)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(GuideRequest, wearer_id, target, label, color, active, issued_by, ts)
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(PairRequest, device_id, console_id, session_id, ts)
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(PairGrant, device_id, console_id, session_id, accepted,
     device_type, fw_version, capabilities, ts)
