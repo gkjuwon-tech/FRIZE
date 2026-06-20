@@ -119,6 +119,9 @@ private:
             {2.5f,2.0f,6.4f, 4.0f,3.6f,6.4f+1.6f},
         };
         for (auto&f:furn) boxes_.push_back({{f.x0,f.y0,f.z0},{f.x1,f.y1,f.z1},"furniture",NaN});
+        // 주방: 가스레인지(발화원). 1층 좌측방 ― 화점 바로 옆(누출/과열 시나리오).
+        boxes_.push_back({{2.8f,1.0f,0.0f},{4.4f,1.9f,0.9f},"gas_range",110.0f}); // 레인지 상판 가열
+        boxes_.push_back({{2.8f,1.0f,0.9f},{4.4f,1.9f,1.6f},"range_hood",NaN});   // 후드
         // 화점 2개 + 요구조자 2개
         boxes_.push_back({{3.2f,1.6f,0},{4.8f,3.2f,1.7f},"fire",640.0f});        // 1층 좌 화점
         boxes_.push_back({{14.2f,10.2f,3.2f},{15.8f,11.8f,3.2f+1.5f},"fire",520.0f}); // 2층 우 화점
