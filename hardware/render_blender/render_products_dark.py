@@ -171,7 +171,7 @@ JOBS=[
          groups=["body","screen","metal","accent","rubber"]),
     dict(name="scout",   stl="scout.stl", base=(0.018,0.020,0.026), az=46, el=17, zrot=25, lens=84, margin=1.18),
     dict(name="visor",   stl="visor.stl", base=(0.024,0.026,0.034), az=40, el=18, zrot=0,  lens=80, margin=1.4),
-    dict(name="vent",    stl="vent.stl",  base=(0.09,0.09,0.04),    az=42, el=22, zrot=20, lens=78, margin=1.45),
+    dict(name="vent",    stl="vent.stl",  base=(0.030,0.032,0.030), az=42, el=20, zrot=20, lens=80, margin=1.30),
 ]
 
 def main():

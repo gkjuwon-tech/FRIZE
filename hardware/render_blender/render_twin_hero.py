@@ -10,7 +10,8 @@ HDRI=os.path.join(ROOT,"hdri","studio_small_08_2k.hdr")
 argv=sys.argv[sys.argv.index("--")+1:] if "--" in sys.argv else []
 PLY=argv[0] if len(argv)>0 else "/tmp/dashtwin/twin.ply"
 OUT=argv[1] if len(argv)>1 else OUT_DEFAULT
-RES=(1920,1280); SAMPLES=340; CUT_Z=2.72     # 지붕/2층 컷 → 1층 내부 노출
+RES=(1920,1280); SAMPLES=200; CUT_Z=2.72     # 지붕/2층 컷 → 1층 내부 노출
+USE_HAZE=False                                # 볼륨 갓레이(CPU에서 매우 느림) ― 기본 off
 
 def setup_render():
     sc=bpy.context.scene; sc.render.engine='CYCLES'
@@ -130,7 +131,9 @@ def main():
     pts=[o.matrix_world@v.co for v in o.data.vertices]
     ctr=sum(pts,mathutils.Vector((0,0,0)))/len(pts)
     rad=max((v-ctr).length for v in pts)
-    holo_floor(max(40,rad*3)); haze(ctr,rad); lights(ctr,rad)
+    holo_floor(max(40,rad*3));
+    if USE_HAZE: haze(ctr,rad)
+    lights(ctr,rad)
     cd=bpy.data.cameras.new("cam"); cd.lens=42
     cam=bpy.data.objects.new("cam",cd); bpy.context.collection.objects.link(cam); bpy.context.scene.camera=cam
     az,el=math.radians(-52),math.radians(38)
