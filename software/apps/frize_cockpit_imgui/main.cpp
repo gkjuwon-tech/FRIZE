@@ -38,6 +38,20 @@ static Tex load_tex(const char* p){ Tex t;int n;unsigned char* d=stbi_load(p,&t.
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
     glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,t.w,t.h,0,GL_RGBA,GL_UNSIGNED_BYTE,d);stbi_image_free(d);return t;}
 
+// 프로스티드 글래스용 블러 텍스처: 블록 평균으로 다운스케일(→업스케일 시 부드러운 블러).
+static Tex make_blur_tex(const char* p,int down){
+    Tex t;int w,h,n;unsigned char* d=stbi_load(p,&w,&h,&n,4); if(!d) return t;
+    int sw=w/down, sh=h/down; if(sw<1||sh<1){stbi_image_free(d);return t;}
+    std::vector<unsigned char> s((size_t)sw*sh*4);
+    for(int y=0;y<sh;++y)for(int x=0;x<sw;++x){ int r=0,g=0,b=0,a=0,c=0;
+        for(int yy=0;yy<down;++yy)for(int xx=0;xx<down;++xx){ int sx=x*down+xx,sy=y*down+yy; if(sx>=w||sy>=h)continue;
+            unsigned char* px=&d[((size_t)sy*w+sx)*4]; r+=px[0];g+=px[1];b+=px[2];a+=px[3];++c; }
+        unsigned char* o=&s[((size_t)y*sw+x)*4]; o[0]=r/c;o[1]=g/c;o[2]=b/c;o[3]=a/c; }
+    stbi_image_free(d); t.w=sw;t.h=sh;
+    glGenTextures(1,&t.id);glBindTexture(GL_TEXTURE_2D,t.id);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,sw,sh,0,GL_RGBA,GL_UNSIGNED_BYTE,s.data());return t;}
+
 static ImFont *UI,*UIB,*BIG,*SM,*MO,*MOS;
 static ImDrawList* DL;
 static void T (ImFont* f,float x,float y,ImU32 c,const char* s){ DL->AddText(f,f->FontSize,ImVec2(x,y),c,s); }
@@ -46,7 +60,7 @@ static float WD(ImFont* f,const char* s){ return f->CalcTextSizeA(f->FontSize,1e
 // 자간 워드마크
 static float spaced(ImFont* f,float x,float y,ImU32 c,const char* s,float sp){ for(const char*p=s;*p;++p){ char ch[2]={*p,0}; T(f,x,y,c,ch); x+=WD(f,ch)+sp; } return x; }
 
-static Tex TWN,POV; static json CM; static int sel=1; static std::deque<std::string> EV; static std::string pend;
+static Tex TWN,TWNB,POV; static json CM; static int sel=1; static std::deque<std::string> EV; static std::string pend;
 static void ev(const std::string& s){ EV.push_front(s); if(EV.size()>16)EV.pop_back(); }
 static std::string ttype(){ std::string t=CM["clusters"]["select"]["controls"][sel].value("target","");
     if(t.rfind("scout",0)==0)return"scout"; if(t.rfind("visor",0)==0)return"visor"; if(t.rfind("vent",0)==0)return"vent"; return"all"; }
@@ -84,7 +98,7 @@ int main(int argc,char** argv){
     MOS=io.Fonts->AddFontFromFileTTF(co.c_str(),12);
     io.Fonts->Build();
     ImGui_ImplGlfw_InitForOpenGL(win,true); ImGui_ImplOpenGL3_Init("#version 330");
-    TWN=load_tex(twin); POV=load_tex(pov);
+    TWN=load_tex(twin); TWNB=make_blur_tex(twin,14); POV=load_tex(pov);
 
     for(int frame=0;frame<4;++frame){
         glfwPollEvents(); ImGui_ImplOpenGL3_NewFrame(); ImGui_ImplGlfw_NewFrame(); ImGui::NewFrame();
@@ -99,11 +113,24 @@ int main(int argc,char** argv){
         if(TWN.id){ float ir=(float)TWN.w/TWN.h, vr=(float)WIN_W/WIN_H; ImVec2 u0(0,0),u1(1,1);
             if(ir>vr){float o=(1-vr/ir)/2;u0.x=o;u1.x=1-o;}else{float o=(1-ir/vr)/2;u0.y=o;u1.y=1-o;}
             DL->AddImage((ImTextureID)(intptr_t)TWN.id,ImVec2(0,0),ImVec2(WIN_W,WIN_H),u0,u1); }
-        // 가장자리 스크림(그라데이션, 보더 없음)
-        DL->AddRectFilledMultiColor(ImVec2(0,TOP),ImVec2(LW+30,WIN_H-BOT),al(BG,0.95f),al(BG,0),al(BG,0),al(BG,0.95f));
-        DL->AddRectFilledMultiColor(ImVec2(WIN_W-RW-30,TOP),ImVec2(WIN_W,WIN_H-BOT),al(BG,0),al(BG,0.95f),al(BG,0.95f),al(BG,0));
-        DL->AddRectFilledMultiColor(ImVec2(0,0),ImVec2(WIN_W,TOP+10),al(BG,0.97f),al(BG,0.97f),al(BG,0),al(BG,0));
-        DL->AddRectFilledMultiColor(ImVec2(0,WIN_H-BOT-12),ImVec2(WIN_W,WIN_H),al(BG,0),al(BG,0),al(BG,0.97f),al(BG,0.97f));
+        // 트윈 cover-fit uv (블러 패널이 배경과 같은 좌표로 정렬되도록 공유)
+        float tir=TWN.id?(float)TWN.w/TWN.h:(float)WIN_W/WIN_H, tvr=(float)WIN_W/WIN_H; ImVec2 tu0(0,0),tu1(1,1);
+        if(tir>tvr){float o=(1-tvr/tir)/2;tu0.x=o;tu1.x=1-o;}else{float o=(1-tir/tvr)/2;tu0.y=o;tu1.y=1-o;}
+        // ── 프로스티드 글래스 패널(블러 + 어둡게 → 가독성) ──
+        auto frost=[&](float x0,float y0,float x1,float y1){
+            DL->PushClipRect(ImVec2(x0,y0),ImVec2(x1,y1),true);
+            if(TWNB.id) DL->AddImage((ImTextureID)(intptr_t)TWNB.id,ImVec2(0,0),ImVec2(WIN_W,WIN_H),tu0,tu1);
+            DL->AddRectFilled(ImVec2(x0,y0),ImVec2(x1,y1),al(BG,0.66f)); // 어둡게(프로스트)
+            DL->PopClipRect(); };
+        float LP=LW+34, RP=WIN_W-RW-26;
+        frost(0,TOP-4,LP,WIN_H-BOT+2);            // 좌 패널
+        frost(RP,TOP-4,WIN_W,WIN_H-BOT+2);        // 우 패널
+        // 패널→트윈 경계 페더(보더 없이 자연스럽게)
+        DL->AddRectFilledMultiColor(ImVec2(LP,TOP),ImVec2(LP+26,WIN_H-BOT),al(BG,0.66f),al(BG,0),al(BG,0),al(BG,0.66f));
+        DL->AddRectFilledMultiColor(ImVec2(RP-26,TOP),ImVec2(RP,WIN_H-BOT),al(BG,0),al(BG,0.66f),al(BG,0.66f),al(BG,0));
+        // 상/하 HUD 스크림
+        DL->AddRectFilledMultiColor(ImVec2(0,0),ImVec2(WIN_W,TOP+12),al(BG,0.97f),al(BG,0.97f),al(BG,0),al(BG,0));
+        DL->AddRectFilledMultiColor(ImVec2(0,WIN_H-BOT-14),ImVec2(WIN_W,WIN_H),al(BG,0),al(BG,0),al(BG,0.97f),al(BG,0.97f));
 
         // ── 맵 마커(흰 위주, 화점만 레드) ──
         struct M{float fx,fy;ImU32 c;const char*t;int k;}; // k:0 wearer 1 anchor 2 fire
@@ -153,12 +180,14 @@ int main(int argc,char** argv){
 
         // ── PiP: 선택 유닛 고글 시야(얇은 프레임) ──
         std::string tgt=CM["clusters"]["select"]["controls"][sel]["label"];
-        { float pw=312,ph=176,px=LW+34,py=WIN_H-BOT-ph-16;
+        { float pw=624,ph=351,px=LW+40,py=WIN_H-BOT-ph-14;
+          DL->AddRectFilled(ImVec2(px-2,py-2),ImVec2(px+pw+2,py+ph+2),al(BG,0.55f)); // 글래스 베젤
           if(POV.id){ float ir=(float)POV.w/POV.h,vr=pw/ph; ImVec2 u0(0,0),u1(1,1);
             if(ir>vr){float o=(1-vr/ir)/2;u0.x=o;u1.x=1-o;}else{float o=(1-ir/vr)/2;u0.y=o;u1.y=1-o;}
             DL->AddImage((ImTextureID)(intptr_t)POV.id,ImVec2(px,py),ImVec2(px+pw,py+ph),u0,u1); }
-          DL->AddRect(ImVec2(px,py),ImVec2(px+pw,py+ph),al(TX,0.22f));
-          DL->AddCircleFilled(ImVec2(px+10,py+11),3,CRIT); T(MOS,px+18,py+5,TX,("POV · "+tgt+" 고글").c_str()); TR(MOS,px+pw-6,py+5,DIMc,"Tab"); }
+          DL->AddRect(ImVec2(px,py),ImVec2(px+pw,py+ph),al(TX,0.28f));
+          DL->AddRectFilledMultiColor(ImVec2(px,py),ImVec2(px+pw,py+26),al(BG,0.78f),al(BG,0.78f),al(BG,0),al(BG,0)); // 헤더 스크림
+          DL->AddCircleFilled(ImVec2(px+12,py+13),3.5f,CRIT); T(MO,px+22,py+6,TX,("POV · "+tgt+" 고글 1인칭").c_str()); TR(MOS,px+pw-8,py+8,DIMc,"Tab 전환"); }
 
         // ── 우: 디바이스 링크 / 페어링(라이브 MQTT 로스터) ──
         { float x=WIN_W-RW+10,y=TOP+16,rr=WIN_W-14;
