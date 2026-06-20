@@ -1,351 +1,277 @@
 #!/usr/bin/env python3
-# frize_mission compose ― 풀 시나리오 콕핏 조종 영상 컴포지터
+# frize_mission compose v3 ― 브루탈리즘 터미널 콕핏(HN/htop 톤) + 멀티 시나리오
 #
-# 입력:  <dir>/mission.json  프레임별 에이전트 포즈 + 이벤트(탐지/AR/구조) 타임라인
-#        <dir>/frames/twin_XXXX.png  자라나는 디지털 트윈(포인트클라우드) 배경
-#        <dir>/cam.bin       프레임별 MVP(월드→화면 투영) → 드론/생존자 마커 정렬
-#        <pov dir>/p_XXXX.jpg 실제 소방관 1인칭 영상 프레임(고글 패널)
-# 출력:  <dir>/comp/c_XXXX.png  콕핏 합성 프레임 → ffmpeg 로 mp4
+# 장식 없음. 모노스페이스 텍스트 테이블 + ASCII 바 + 플랫 패널 + 1px 라인.
+# 해저드 스트라이프/볼트/브라켓 같은 "인위적 투박함" 제거 → 진짜 도구처럼.
 #
-# 콕핏이 미션에 따라 실제로 반응한다:
-#   - 드론들이 트윈을 채우며 이동(벽에 막히면 amber)
-#   - 드론 VLM 이 생존자 발견 → 알림 배너 + VLM 카드 + 트윈 핑
-#   - 지휘소가 고글에 AR 경로 명령 → 고글 패널에 AR 오버레이
-#   - 요구조자 확보(구조 비트)
+# 6 시나리오: 01 진입·트윈재구성 / 02 생존자탐지·AR구조 / 03 위험대원·AR후퇴
+#            04 백드래프트·전대원정지 / 05 가스누출·차단 / 06 2차생존자확보
 import json, struct, math, glob, os, sys
-from PIL import Image, ImageDraw, ImageFont, ImageFilter
+from PIL import Image, ImageDraw, ImageFont
 
-DIR   = sys.argv[1] if len(sys.argv)>1 else "/tmp/mission"
-POVD  = sys.argv[2] if len(sys.argv)>2 else "/tmp/povframes"
-OUTD  = os.path.join(DIR,"comp"); os.makedirs(OUTD, exist_ok=True)
+DIR  = sys.argv[1] if len(sys.argv)>1 else "/tmp/mission"
+POVR = sys.argv[2] if len(sys.argv)>2 else "/tmp"
+OUTD = os.path.join(DIR,"comp"); os.makedirs(OUTD, exist_ok=True)
 
-M = json.load(open(os.path.join(DIR,"mission.json")))
-view = json.load(open(os.path.join(DIR,"view.json")))
-W,H,NF = view["W"], view["H"], view["nframes"]
-FPS = M.get("fps",24)
-frames = M["frames"]; events = M["events"]; sem = M.get("semantics",[])
-
-# cam.bin: NF x 16 float (열우선 MVP)
-cam = open(os.path.join(DIR,"cam.bin"),"rb").read()
-CAM = [struct.unpack_from("<16f", cam, i*64) for i in range(NF)]
-
-# points.bin reveal 히스토그램 → 누적 스캔점 수(콕핏에 "수집 포인트" 표시)
+M=json.load(open(DIR+"/mission.json")); view=json.load(open(DIR+"/view.json"))
+W,H,NF=view["W"],view["H"],view["nframes"]; FPS=M.get("fps",24)
+frames=M["frames"]; events=M["events"]; sem=M.get("semantics",[])
+cam=open(DIR+"/cam.bin","rb").read(); CAM=[struct.unpack_from("<16f",cam,i*64) for i in range(NF)]
 try:
     import numpy as np
-    raw = np.fromfile(os.path.join(DIR,"points.bin"), dtype=np.uint8)
-    n = raw.shape[0]//18
-    rev = raw[:n*18].reshape(n,18)[:,16:18].copy().view(np.uint16).reshape(-1)
-    hist = np.bincount(rev, minlength=NF)
-    CUM = np.cumsum(hist).tolist()
-except Exception as e:
-    CUM = [int(M["npoints"]*f/NF) for f in range(NF)]
+    raw=np.fromfile(DIR+"/points.bin",dtype=np.uint8); n=raw.shape[0]//18
+    rev=raw[:n*18].reshape(n,18)[:,16:18].copy().view(np.uint16).reshape(-1)
+    CUM=np.cumsum(np.bincount(rev,minlength=NF)).tolist()
+except Exception: CUM=[int(M["npoints"]*f/NF) for f in range(NF)]
 
-POV = sorted(glob.glob(os.path.join(POVD,"p_*.jpg")))
+# ── 터미널 팔레트(거의 모노크롬) ──
+BG=(3,4,7); PANEL=(3,4,7); BORD=(44,49,57); RULE=(33,37,43)   # 트윈 배경(검정)과 동일 → 경계 없음
+TX=(198,204,210); DIM=(120,128,138); MUT=(78,86,96)
+GRN=(116,184,128); AMB=(206,170,84); RED=(222,84,70); CYN=(120,178,224)
 
-# ── 팔레트(모노크롬 콕핏) ──
-BG=(8,10,13); TX=(232,237,242); TX2=(150,160,172); DIM=(96,105,116); FNT=(70,78,88)
-OK=(96,162,124); WARN=(210,168,86); CRIT=(214,78,64); LINE=(40,46,54); ACC=(120,170,225)
-
-def F(path,sz): return ImageFont.truetype(path,sz)
-KO="/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc"
-RB="/tmp/imgui/misc/fonts/Roboto-Medium.ttf"
-CO="/tmp/imgui/misc/fonts/Cousine-Regular.ttf"
-f_big=F(RB,30); f_h=F(KO,18); f_ui=F(KO,16); f_sm=F(KO,14); f_xs=F(KO,12)
-f_mo=F(CO,15); f_mos=F(CO,12); f_mol=F(CO,20); f_wm=F(RB,26)
-
-def project(mvp,x,y,z):
-    cx=mvp[0]*x+mvp[4]*y+mvp[8]*z+mvp[12]
-    cy=mvp[1]*x+mvp[5]*y+mvp[9]*z+mvp[13]
-    cw=mvp[3]*x+mvp[7]*y+mvp[11]*z+mvp[15]
-    if cw<=1e-5: return None
-    nx=cx/cw; ny=cy/cw
-    return ((nx*0.5+0.5)*W, (1-(ny*0.5+0.5))*H)
+# 모노(Cousine) + 한글(WQY zenhei, 고정폭 CJK)
+CO="/tmp/imgui/misc/fonts/Cousine-Regular.ttf"; KO="/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc"
+def Fc(s): return ImageFont.truetype(CO,s)
+def Fk(s): return ImageFont.truetype(KO,s)
+m13=Fc(13); m14=Fc(14); m15=Fc(15); m12=Fc(12); m17=Fc(17); m22=Fc(22)
+k13=Fk(13); k14=Fk(14); k15=Fk(15); k16=Fk(16); k20=Fk(20)
 
 def al(c,a): return (c[0],c[1],c[2],int(a*255))
+def project(m,x,y,z):
+    cx=m[0]*x+m[4]*y+m[8]*z+m[12]; cy=m[1]*x+m[5]*y+m[9]*z+m[13]; cw=m[3]*x+m[7]*y+m[11]*z+m[15]
+    if cw<=1e-5: return None
+    return ((cx/cw*0.5+0.5)*W,(1-(cy/cw*0.5+0.5))*H)
+def hangul(s): return any('가'<=ch<='힣' for ch in s)
+def T(d,xy,s,fill,mono=True,sz=14):
+    f=(Fc(sz) if not hangul(s) else Fk(sz)) if False else None
+    f=(m14 if sz==14 else Fc(sz)) if (mono and not hangul(s)) else (k14 if sz==14 else Fk(sz))
+    d.text(xy,s,font=f,fill=fill)
+def tw(d,s,f): return d.textlength(s,font=f)
 
-def text(d,xy,s,font,fill,anchor=None):
-    d.text(xy,s,font=font,fill=fill,anchor=anchor)
-def tw(d,s,font): return d.textlength(s,font=font)
+CHW=tw(ImageDraw.Draw(Image.new("RGB",(4,4))),"M",m14)  # 모노 한 칸 폭
+def bar(frac,n=14):
+    k=max(0,min(n,int(frac*n+0.5))); return "["+"#"*k+"-"*(n-k)+"]"
 
-# ── 이벤트 인덱싱 ──
-detects=[e for e in events if e["kind"]=="detect"]
-ar_cmds=[e for e in events if e["kind"]=="ar_cmd"]
-ar_cues=[e for e in events if e["kind"]=="ar_cue"]
-rescues=[e for e in events if e["kind"]=="rescue"]
+def rule(d,x,y,w,label=None,col=DIM):
+    # `LABEL --------------------`  (HN/터미널식 섹션 구분)
+    if label:
+        d.text((x,y),label,font=m13,fill=col)
+        lw=tw(d,label,m13)+6; nx=x+lw
+    else: nx=x
+    dash="-"*int((w-(nx-x))/max(1,CHW))
+    d.text((nx,y),dash,font=m13,fill=RULE)
 
-# ── 로그 피드 빌드(프레임 → 누적 줄) ──
-SEMNAME={"gas_range":"가스레인지","range_hood":"렌지후드","fire":"화점","person":"요구조자","furniture":"가구"}
+LWX=400; RWX=W-404; TOPH=30; BOTH=92
+
+# ── 시나리오 ──
+def sx(name):
+    for s in sem:
+        if s["kind"]==name: return s
+def vget(x,y): return {"x":x,"y":y,"z":0.4}
+gas=sx("gas_range") or vget(5.4,1.05)
+CH=[
+ dict(a=0,  b=80, code="01",title="진입 · 디지털 트윈 재구성",wearer="VISOR-1",pov="pov_v1",telem="normal",action=None,alert=None),
+ dict(a=80, b=168,code="02",title="생존자 탐지 · AR 구조 유도",wearer="VISOR-2",pov="pov_v2",telem="normal",action=("ar_route",vget(2.6,9.8)),alert=("SURVIVOR","NW 병실 · 비반응 인원 1")),
+ dict(a=168,b=252,code="03",title="위험대원 · AR 후퇴 명령",wearer="VISOR-3",pov="pov_v3",telem="danger",action=("ar_retreat",None),alert=("DANGER","VISOR-3  O2 16%  CO 1100ppm  SCBA 38bar  -> RETREAT")),
+ dict(a=252,b=330,code="04",title="백드래프트 경보 · 전대원 정지",wearer="VISOR-1",pov="pov_v1",telem="warn",action=("estop",None),alert=("BACKDRAFT","북측 화점 급팽창 · 플래시오버 위험 -> ALL STOP")),
+ dict(a=330,b=410,code="05",title="가스레인지 누출 · 차단 지시",wearer="VISOR-2",pov="pov_v2",telem="warn",action=("gas",gas),alert=("GAS","주방 LEL 28% -> 원격 밸브 CLOSE")),
+ dict(a=410,b=NF, code="06",title="2차 생존자 확보 · 상황 정리",wearer="VISOR-1",pov="pov_v3",telem="normal",action=("ar_route",vget(22.8,2.2)),alert=("SURVIVOR","SE 끝방 · 요구조자 확보")),
+]
+def chap(f):
+    for c in CH:
+        if c["a"]<=f<c["b"]: return c
+    return CH[-1]
+POVS={k:sorted(glob.glob(os.path.join(POVR,k,"p_*.jpg"))) for k in ["pov_v1","pov_v2","pov_v3"]}
+TEL={
+ "normal":[("O2 ","20.8%",0.86,GRN),("HR ","94bpm",0.42,GRN),("AIR","228bar",0.86,GRN),("CO ","40ppm",0.08,GRN)],
+ "warn":  [("O2 ","19.2%",0.62,AMB),("HR ","128bpm",0.62,AMB),("AIR","148bar",0.55,AMB),("CO ","310ppm",0.34,AMB)],
+ "danger":[("O2 ","16.1%",0.18,RED),("HR ","191bpm",0.96,RED),("AIR","38bar",0.14,RED),("CO ","1100ppm",0.92,RED)],
+}
+ROSTER=[("SCOUT-1","DRONE"),("SCOUT-2","DRONE"),("SCOUT-3","DRONE"),
+        ("VISOR-1","GOGL"),("VISOR-2","GOGL"),("VISOR-3","GOGL")]
+
 def build_log():
-    L=[]  # (f, text, color)
-    L.append((0,"CORE 부팅 · 메시 링크 OK · 디바이스 4",DIM))
-    L.append((1,"SCOUT-1·2·3 진입 · 자율 프런티어 탐사 개시",TX2))
-    L.append((2,"VISOR-1 대원 현관 진입 · 헬멧 피드 ON",TX2))
-    # blocked 로그(가끔)
-    last_block={}
-    for fr in frames:
-        f=fr["f"]
-        for a in fr["agents"]:
-            if a.get("blocked") and a["type"]=="scout":
-                if f-last_block.get(a["id"],-99)>40:
-                    L.append((f,f"{a['id']} 벽면 차단 · 경로 재계획",WARN)); last_block[a["id"]]=f
-        if f==int(NF*0.12): L.append((f,"트윈 재구성 진행 · TSDF 융합 중",DIM))
-        if f==int(NF*0.30): L.append((f,"1층 평면 윤곽 확보 · 복도/실 분리",DIM))
-        if f==int(NF*0.55): L.append((f,"2층 진입 · 우측 화점 열징후 상승",WARN))
-        if f==int(NF*0.78): L.append((f,"3층 스캔 · 미탐사 경계 감소",DIM))
-    for e in detects:
-        L.append((e["f"],f"⚠ {e['by']} VLM 생존자 탐지 · {e['floor']}F · conf {e['conf']:.2f}",CRIT))
-    for e in ar_cmds:
-        L.append((e["f"],"지휘소 → VISOR-1 AR 경로 명령 송출",ACC))
-    for e in ar_cues:
-        L.append((e["f"],f"고글 AR 큐: {e['text']}",ACC))
-    for e in rescues:
-        L.append((e["f"],f"✔ {e['text']}",OK))
-    L.sort(key=lambda x:x[0])
-    return L
+    L=[(0,"core boot ok  mesh-link up  dev 6/6",DIM),(1,"scout-1/2/3 enter  autonomous frontier recon",DIM),
+       (2,"visor-1/2/3 enter  helmet feed on",DIM)]
+    for e in [e for e in events if e["kind"]=="detect"]:
+        L.append((e["f"],f"[!] {e['by']} vlm survivor  conf {e['conf']:.2f}",RED))
+    for c in CH:
+        L.append((c["a"],f"== ch{c['code']}  {c['title']}",CYN))
+        if c["action"]:
+            t={"ar_route":"cmd> visor ar-route to survivor","ar_retreat":"cmd> visor-3 AR-RETREAT now",
+               "estop":"cmd> E-STOP broadcast all units","gas":"cmd> gas valve CLOSE (remote)"}[c["action"][0]]
+            L.append((c["a"]+8,t, RED if c["action"][0] in("ar_retreat","estop") else CYN))
+    L.sort(key=lambda z:z[0]); return L
 LOG=build_log()
 
-# 폰트로 한글/기호 폭 보정용 truncate
-def fit(d,s,font,maxw):
-    while s and d.textlength(s,font=font)>maxw: s=s[:-1]
-    return s
-
-def frosted(base, box, blur=14, dark=0.62):
-    x0,y0,x1,y1=box
-    x0=max(0,int(x0)); y0=max(0,int(y0)); x1=min(W,int(x1)); y1=min(H,int(y1))
-    if x1<=x0 or y1<=y0: return
-    reg=base.crop((x0,y0,x1,y1)).filter(ImageFilter.GaussianBlur(blur))
-    base.paste(reg,(x0,y0))
-    ov=Image.new("RGBA",(x1-x0,y1-y0),al(BG,dark))
-    base.paste(Image.alpha_composite(base.crop((x0,y0,x1,y1)).convert("RGBA"),ov).convert("RGB"),(x0,y0))
-
-LWX=372; RWX=W-396   # 좌/우 패널 경계
-TOPH=52; BOTH=104
-
 def compose(f):
-    twin=Image.open(os.path.join(DIR,"frames",f"twin_{f:04d}.png")).convert("RGB")
-    if twin.size!=(W,H): twin=twin.resize((W,H))
-    img=twin
-    mvp=CAM[f]; fr=frames[f]
+    img=Image.open(os.path.join(DIR,"frames",f"twin_{f:04d}.png")).convert("RGB")
+    if img.size!=(W,H): img=img.resize((W,H))
+    m=CAM[f]; fr=frames[f]; c=chap(f); flocal=f-c["a"]; aw=c["wearer"]
     agents={a["id"]:a for a in fr["agents"]}
-
-    # ── 트윈 위 마커(패널 가리기 전에) ──
     d=ImageDraw.Draw(img,"RGBA")
-    # 시맨틱: 가스레인지/화점/가구
+
+    # ── 트윈 마커(미니멀: + 와 라벨) ──
     for s in sem:
-        p=project(mvp,s["x"],s["y"],s["z"])
+        p=project(m,s["x"],s["y"],s["z"])
         if not p: continue
         x,y=p
-        if not (LWX-40<x<RWX+40): pass
-        k=s["kind"]
-        if k=="fire":
-            d.ellipse([x-9,y-9,x+9,y+9],outline=al(CRIT,0.7),width=2)
-            d.ellipse([x-3,y-3,x+3,y+3],fill=CRIT)
-            text(d,(x+12,y-8),f"화점 {int(s['temp'])}℃",f_mos,CRIT)
-        elif k=="gas_range":
-            d.rectangle([x-7,y-7,x+7,y+7],outline=al(WARN,0.8),width=2)
-            text(d,(x+11,y-8),"가스레인지",f_xs,WARN)
-        elif k=="furniture":
-            d.rectangle([x-3,y-3,x+3,y+3],outline=al(DIM,0.5),width=1)
-    # 에이전트
+        if s["kind"]=="fire":
+            d.line([x-7,y,x+7,y],fill=RED,width=2); d.line([x,y-7,x,y+7],fill=RED,width=2)
+            d.text((x+9,y-7),f"FIRE {int(s['temp'])}C",font=m12,fill=RED)
+        elif s["kind"]=="gas_range":
+            d.rectangle([x-5,y-5,x+5,y+5],outline=AMB,width=1); d.text((x+9,y-7),"GAS",font=m12,fill=AMB)
     for aid,a in agents.items():
-        p=project(mvp,a["x"],a["y"],a["z"])
+        p=project(m,a["x"],a["y"],a["z"])
         if not p: continue
-        x,y=p
-        scout=a["type"]=="scout"
-        col=WARN if a.get("blocked") else (ACC if scout else TX)
-        # 헤딩 틱
-        hp=project(mvp,a["x"]+math.cos(a["yaw"])*0.9,a["y"]+math.sin(a["yaw"])*0.9,a["z"])
-        if hp: d.line([x,y,hp[0],hp[1]],fill=al(col,0.8),width=2)
-        if scout:
-            d.polygon([(x,y-7),(x-6,y+5),(x+6,y+5)],outline=col,width=2)
-        else:
-            d.ellipse([x-6,y-6,x+6,y+6],outline=col,width=2)
-            d.ellipse([x-2,y-2,x+2,y+2],fill=col)
-        text(d,(x+9,y-7),aid,f_mos,col)
-        if a.get("blocked"):
-            d.ellipse([x-12,y-12,x+12,y+12],outline=al(WARN,0.55),width=1)
-    # 생존자 핑(탐지 후 펄스)
-    for e in detects:
+        x,y=p; scout=a["type"]=="scout"; active=(aid==aw); dng=active and c["telem"]=="danger"
+        col=AMB if a.get("blocked") else (CYN if scout else (RED if dng else TX))
+        if scout: d.rectangle([x-4,y-4,x+4,y+4],outline=col,width=1)
+        else: d.line([x-5,y,x+5,y],fill=col,width=1); d.line([x,y-5,x,y+5],fill=col,width=1)
+        if active:
+            d.text((x+8,y-7),aid,font=m12,fill=col)
+            d.rectangle([x-9,y-9,x+9,y+9],outline=col,width=1)
+        else: d.text((x+7,y-6),aid.split("-")[0][0]+aid[-1],font=m12,fill=al(col,0.9))
+    for e in [e for e in events if e["kind"]=="detect"]:
         if f<e["f"]: continue
-        p=project(mvp,e["x"],e["y"],e["z"])
+        p=project(m,e["x"],e["y"],e["z"])
         if not p: continue
-        x,y=p
-        ph=(f-e["f"])
-        rr=10+(ph%18)*1.6
-        aa=max(0.0,0.7-(ph%18)/26)
-        d.ellipse([x-rr,y-rr,x+rr,y+rr],outline=al(CRIT,aa),width=2)
-        d.ellipse([x-4,y-4,x+4,y+4],fill=CRIT)
-        text(d,(x+13,y-6),"요구조자",f_xs,(255,210,205))
-        text(d,(x+13,y+8),f"conf {e['conf']:.2f}",f_mos,al(CRIT,0.9))
+        x,y=p; bl=(f//4)%2
+        if bl: d.rectangle([x-8,y-8,x+8,y+8],outline=RED,width=1)
+        d.line([x-5,y,x+5,y],fill=RED,width=2); d.line([x,y-5,x,y+5],fill=RED,width=2)
+        d.text((x+10,y-6),"SURVIVOR",font=m12,fill=RED)
 
-    # ── 프로스티드 패널 ──
-    frosted(img,(0,TOPH-6,LWX,H-BOTH+2))
-    frosted(img,(RWX,TOPH-6,W,H-BOTH+2))
-    d=ImageDraw.Draw(img,"RGBA")
-    # 상/하 스크림
-    d.rectangle([0,0,W,TOPH],fill=al(BG,0.92))
-    d.rectangle([0,H-BOTH,W,H],fill=al(BG,0.92))
+    # ── 패널: 트윈 배경과 동일 검정으로 꽉 채움(이음매/경계선 없음) ──
+    d.rectangle([0,TOPH,LWX,H-BOTH],fill=PANEL)
+    d.rectangle([RWX,TOPH,W,H-BOTH],fill=PANEL)
+    d.rectangle([0,0,W,TOPH],fill=PANEL)
+    d.rectangle([0,H-BOTH,W,H],fill=PANEL)
 
-    # ── 상단 바 ──
-    d.regular_polygon((24,26,9),6,rotation=0,outline=TX,width=2)
-    d.regular_polygon((24,26,3),6,rotation=0,outline=TX,width=1)
-    x=42
-    for ch in "FRIZE":
-        text(d,(x,12),ch,f_wm,TX); x+=tw(d,ch,f_wm)+5
-    text(d,(x+10,18),"COMMAND OS",f_mo,DIM)
-    text(d,(LWX+18,10),"작전 시연 · 3층 구조화재",f_sm,TX)
-    text(d,(LWX+18,30),"SITE SEOUL-HQ   INCIDENT 2026-0620-014",f_mos,TX2)
-    # 우상단 인디케이터
-    rx=W-16
-    for s,c in [("09:41:22Z",TX),("UWB MESH",TX2),("4 LINKED",TX2)]:
-        wsz=tw(d,s,f_mo); text(d,(rx-wsz,16),s,f_mo,c); rx-=wsz+20
-    d.ellipse([rx-8,20,rx-2,26],fill=OK); rx-=18
+    # ── 상단 한 줄(터미널 헤더) ──
+    d.text((10,7),"FRIZE",font=m17,fill=TX); d.text((68,9),"command-os",font=m13,fill=DIM)
+    d.text((180,9),f"ch{c['code']}",font=m14,fill=CYN); T(d,(220,8),c["title"],TX,sz=15)
+    rt=f"mesh:OK  link:6/6  T+{f/FPS:05.1f}s  09:41:22Z"
+    d.text((W-tw(d,rt,m14)-10,9),rt,font=m14,fill=DIM)
 
-    # ── 좌 패널: 유닛 로스터 ──
-    x=18; y=TOPH+14
-    text(d,(x,y),"UNITS · 4 ONLINE",f_mos,FNT); text(d,(LWX-46,y),"[1-4]",f_mos,FNT); y+=24
-    roster=[("SCOUT-1","scout"),("SCOUT-2","scout"),("SCOUT-3","scout"),("VISOR-1","visor")]
-    for i,(aid,typ) in enumerate(roster):
-        a=agents.get(aid,{})
-        blocked=a.get("blocked",False)
-        st = "차단·재경로" if blocked else ("탐사중" if typ=="scout" else "수색중")
-        led = WARN if blocked else OK
-        sel = (typ=="visor")  # 고글 선택 강조
-        if sel: d.rectangle([x-6,y-3,LWX-10,y+40],fill=al(TX,0.06))
-        d.rectangle([x,y+3,x+5,y+9],fill=led)
-        nm = "GOGGLE" if typ=="visor" else "DRONE"
-        text(d,(x+14,y-1),aid,f_ui,TX if sel else (TX2 if not blocked else WARN))
-        text(d,(x+14,y+19),f"{nm} · {st}",f_sm,DIM)
-        text(d,(LWX-12,y+1),f"[{i+1}]",f_mos,FNT,anchor="ra")
-        # 미니 배터리/좌표
-        if a:
-            text(d,(LWX-12,y+20),f"{a['x']:.0f},{a['y']:.0f},{a['z']:.0f}",f_mos,FNT,anchor="ra")
-        y+=48
-    # 탐사율
-    y+=6; ex=fr.get("explored",0)
-    text(d,(x,y),"트윈 재구성",f_mos,FNT); text(d,(LWX-12,y),f"{ex*100:.0f}%",f_mo,TX,anchor="ra"); y+=18
-    d.rectangle([x,y,LWX-12,y+4],fill=al(LINE,1)); d.rectangle([x,y,x+(LWX-12-x)*ex,y+4],fill=ACC); y+=16
-    text(d,(x,y),"수집 포인트",f_mos,FNT); text(d,(LWX-12,y),f"{CUM[f]:,}",f_mo,TX2,anchor="ra"); y+=24
-    text(d,(x,y),"DETECTIONS",f_mos,FNT); y+=18
-    ndet=sum(1 for e in detects if f>=e["f"])
-    text(d,(x+14,y),f"생존자 {ndet} · 화점 2 · 가스 1",f_sm, CRIT if ndet else DIM)
+    # ── 좌 패널 ──
+    x=10; y=TOPH+10
+    rule(d,x,y,LWX-20,"UNITS"); y+=18
+    d.text((x,y),"id        type   state       xy",font=m12,fill=MUT); y+=15
+    for i,(aid,typ) in enumerate(ROSTER):
+        a=agents.get(aid,{}); blocked=a.get("blocked",False); active=(aid==aw); dng=active and c["telem"]=="danger"
+        st="DANGER" if dng else ("BLOCKED" if blocked else ("RECON" if typ=="DRONE" else "SEARCH"))
+        col=RED if dng else (AMB if blocked else (TX if active else DIM))
+        cur=">" if active else " "
+        xy=f"{a.get('x',0):04.1f},{a.get('y',0):04.1f}" if a else "--"
+        d.text((x,y),f"{cur}{aid:8} {typ:5}  {st:9}  {xy}",font=m13,fill=col); y+=16
+    y+=6; rule(d,x,y,LWX-20,"TWIN"); y+=18
+    ex=fr.get("explored",0)
+    d.text((x,y),f"recon  {bar(ex,18)} {ex*100:4.0f}%",font=m14,fill=TX); y+=16
+    d.text((x,y),f"points {CUM[f]:>10,}",font=m14,fill=DIM); y+=16
+    obs=fr.get("observed",0)
+    d.text((x,y),f"voxels {obs:>10,} observed",font=m13,fill=MUT); y+=20
+    rule(d,x,y,LWX-20,"HAZARDS"); y+=18
+    ndet=sum(1 for e in events if e["kind"]=="detect" and f>=e["f"])
+    d.text((x,y),f"survivor {ndet}   fire 2   gas 1",font=m14,fill=RED if ndet else DIM); y+=18
+    af=c["alert"]
+    if af:
+        d.text((x,y),f"state    {af[0]}",font=m14,fill={"SURVIVOR":RED,"DANGER":RED,"BACKDRAFT":RED,"GAS":AMB}[af[0]]); y+=16
 
     # ── 우 패널 ──
-    x=RWX+16; y=TOPH+14; rr=W-16
-    text(d,(x,y),"MISSION CLOCK",f_mos,FNT); text(d,(rr,y),f"T+{f/FPS:5.1f}s",f_mo,TX,anchor="ra"); y+=26
-    # VLM 탐지 카드(활성 시)
-    active_det=[e for e in detects if 0<=f-e["f"]<FPS*5]
-    if active_det:
-        e=active_det[-1]
-        d.rectangle([x-6,y-4,rr+2,y+86],outline=al(CRIT,0.8),width=2)
-        d.rectangle([x-6,y-4,rr+2,y+20],fill=al(CRIT,0.22))
-        text(d,(x+4,y-1),"⚠ VLM 생존자 탐지",f_ui,(255,225,222)); y+=24
-        text(d,(x+4,y),f"{e['by']} 카메라 · {e['floor']}F",f_sm,TX); y+=20
-        text(d,(x+4,y),f"위치 ({e['x']:.1f}, {e['y']:.1f}, {e['z']:.1f})",f_mos,TX2); y+=18
-        text(d,(x+4,y),f"신뢰도 {e['conf']:.2f} · 비반응 자세",f_mos,WARN); y+=26
+    x=RWX+10; y=TOPH+10; rr=W-12
+    rule(d,x,y,rr-x,"VLM"); y+=18
+    actdet=[e for e in events if e["kind"]=="detect" and 0<=f-e["f"]<FPS*5]
+    if actdet:
+        e=actdet[-1]
+        d.text((x,y),"[!] SURVIVOR DETECTED",font=m14,fill=RED); y+=16
+        d.text((x,y),f"by {e['by']}  los-cam",font=m13,fill=TX); y+=15
+        d.text((x,y),f"xy {e['x']:.1f},{e['y']:.1f}  conf {e['conf']:.2f}",font=m13,fill=DIM); y+=18
     else:
-        text(d,(x,y),"VLM 분석",f_mos,FNT); text(d,(rr,y),"정상 감시",f_mo,OK,anchor="ra"); y+=26
-    # 텔레메트리(VISOR-1)
-    text(d,(x,y),"VISOR-1 텔레메트리",f_mos,FNT); y+=20
-    rows=[("산소 O₂","18.4%",0.62,WARN),("심박","168 bpm",0.84,WARN),
-          ("SCBA 잔압","152 bar",0.50,TX2),("가스 CO","420 ppm",0.7,CRIT)]
-    for k,v,fv,c in rows:
-        text(d,(x,y),k,f_sm,DIM); text(d,(rr,y),v,f_mo,TX,anchor="ra"); y+=15
-        d.rectangle([x,y,rr,y+3],fill=al(LINE,1)); d.rectangle([x,y,x+(rr-x)*fv,y+3],fill=c); y+=15
-    y+=10
-    # 이벤트 로그(스크롤)
-    text(d,(x,y),"EVENT LOG",f_mos,FNT); y+=18
-    shown=[l for l in LOG if l[0]<=f][-11:]
-    for (lf,s,c) in shown:
-        fade = 1.0 if f-lf<6 else 0.82
-        cc = c if f-lf<FPS*2 else tuple(int(v*0.8) for v in c)
-        text(d,(x,y),fit(d,s,f_xs,rr-x),f_xs,cc); y+=16
+        d.text((x,y),"nominal  no anomaly",font=m13,fill=GRN); y+=20
+    rule(d,x,y,rr-x,f"TELEMETRY {aw}"); y+=18
+    for k,v,fv,col in TEL[c["telem"]]:
+        d.text((x,y),f"{k} {bar(fv,16)} {v}",font=m14,fill=col); y+=16
+    y+=6; rule(d,x,y,rr-x,"LOG"); y+=18
+    for (lf,s,col) in [l for l in LOG if l[0]<=f][-12:]:
+        ss=f"{lf/FPS:5.1f} {s}"
+        while tw(d,ss,m12)>rr-x and len(ss)>4: ss=ss[:-1]
+        d.text((x,y),ss,font=m12,fill=col if f-lf<FPS*2 else tuple(int(v*0.7) for v in col)); y+=14
 
-    # ── 고글 POV 패널(좌하단, 크게) + AR 오버레이 ──
-    pw,ph=int(W*0.345),int(W*0.345*9/16)
-    px=18; py=H-BOTH-ph-14
-    if POV:
-        pi=min(len(POV)-1,int(f/NF*(len(POV)-1)))
-        pov=Image.open(POV[pi]).convert("RGB").resize((pw,ph))
-        img.paste(pov,(px,py))
+    # ── 고글 POV(플랫 1px 베젤) ──
+    pw,ph=int(W*0.33),int(W*0.33*9/16); px=12; py=H-BOTH-ph-10
+    plist=POVS.get(c["pov"]) or POVS["pov_v1"]
+    if plist:
+        seg=max(1,c["b"]-c["a"]); pi=min(len(plist)-1,int(flocal/seg*(len(plist)-1)))
+        img.paste(Image.open(plist[pi]).convert("RGB").resize((pw,ph)),(px,py))
     d=ImageDraw.Draw(img,"RGBA")
-    d.rectangle([px-2,py-2,px+pw+2,py+ph+2],outline=al(TX,0.3),width=1)
-    d.rectangle([px,py,px+pw,py+26],fill=al(BG,0.6))
-    d.ellipse([px+8,py+9,px+16,py+17],fill=CRIT)
-    text(d,(px+22,py+6),"POV · VISOR-1 고글 1인칭",f_mo,TX)
-    text(d,(px+pw-8,py+7),"LIVE",f_mos,CRIT,anchor="ra")
-    # 고글 자체 AR HUD(상시): 나침반/크로스헤어
-    cx=px+pw//2
-    d.line([cx-10,py+ph-30,cx+10,py+ph-30],fill=al(TX,0.4),width=1)
-    text(d,(px+10,py+ph-22),"O₂ 18.4%",f_mos,al((255,255,255),0.8))
-    text(d,(px+pw-10,py+ph-22),"CO 420ppm",f_mos,al((255,180,170),0.9),anchor="ra")
-    # 지휘소 AR 명령(ar_cmd 후) → 경로 셰브론 + 타깃 브라켓
-    ar_on=[e for e in ar_cmds if f>=e["f"]]
-    if ar_on:
-        e=ar_on[-1]
-        ph2=f-e["f"]
-        # 상단 AR 배너
-        d.rectangle([px,py+28,px+pw,py+50],fill=al((20,40,60),0.55))
-        text(d,(px+10,py+30),"▲ 지휘소 AR · 요구조자 경로",f_sm,(150,210,255))
-        # 경로 셰브론(중앙 하단 → 우상단 타깃)
-        tx_,ty_=px+pw*0.66, py+ph*0.42
-        for k in range(5):
-            t=(k+ (ph2*0.12)%1)/5
-            sx=px+pw*0.5+(tx_-(px+pw*0.5))*t
-            sy=py+ph*0.86+(ty_-(py+ph*0.86))*t
-            sz=4+6*t
-            d.line([sx-sz,sy+sz,sx,sy],fill=al((150,210,255),0.9),width=2)
-            d.line([sx+sz,sy+sz,sx,sy],fill=al((150,210,255),0.9),width=2)
-        # 타깃 브라켓
-        bw=34
-        for c0 in [(-1,-1),(1,-1),(-1,1),(1,1)]:
-            ex=tx_+c0[0]*bw; ey=ty_+c0[1]*bw
-            d.line([ex,ey,ex-c0[0]*12,ey],fill=(255,120,110),width=2)
-            d.line([ex,ey,ex,ey-c0[1]*12],fill=(255,120,110),width=2)
-        text(d,(tx_-bw,ty_-bw-16),"비반응 인원",f_sm,(255,150,140))
-        dist=max(2.0,12.0-ph2*0.05)
-        text(d,(tx_-bw,ty_+bw+4),f"{dist:.1f} m",f_mo,(255,200,195))
-        # 구조 완료 스탬프
-        if any(f>=r["f"] for r in rescues):
-            d.rectangle([px+pw*0.3,py+ph*0.5-16,px+pw*0.7,py+ph*0.5+16],fill=al((20,60,40),0.6))
-            text(d,(px+pw*0.5,py+ph*0.5),"✔ 요구조자 확보",f_ui,(170,240,200),anchor="mm")
+    d.rectangle([px,py,px+pw,py+ph],outline=BORD,width=1)
+    d.rectangle([px,py,px+pw,py+18],fill=al(BG,0.78))
+    d.text((px+5,py+3),f"pov {aw.lower()}",font=m12,fill=TX)
+    t0=TEL[c["telem"]]
+    d.text((px+pw-5-tw(d,"LIVE",m12),py+3),"LIVE",font=m12,fill=RED)
+    d.text((px+5,py+ph-16),f"{t0[0][0]}{t0[0][1]}  {t0[3][0]}{t0[3][1]}",font=m12,fill=al((230,230,230),0.9))
+    # AR 오버레이(텍스트 위주, 미니멀)
+    act=c["action"]
+    if act:
+        kind=act[0]
+        if kind in("ar_route","gas"):
+            d.rectangle([px,py+18,px+pw,py+36],fill=al((10,28,44),0.7))
+            d.text((px+5,py+20),("AR> gas shutoff point" if kind=="gas" else "AR> route to survivor"),font=m13,fill=CYN)
+            tgt=act[1]; ex_,ey_=px+pw*0.66,py+ph*0.42; cxp,cyp=px+pw*0.5,py+ph*0.84
+            for k in range(5):
+                t=(k+(flocal*0.1)%1)/5; sx=cxp+(ex_-cxp)*t; sy=cyp+(ey_-cyp)*t; s=4+5*t
+                d.line([sx-s,sy+s,sx,sy],fill=CYN,width=2); d.line([sx+s,sy+s,sx,sy],fill=CYN,width=2)
+            bw=26; tc=RED if kind=="ar_route" else AMB
+            for q in [(-1,-1),(1,-1),(-1,1),(1,1)]:
+                exx=ex_+q[0]*bw; eyy=ey_+q[1]*bw
+                d.line([exx,eyy,exx-q[0]*10,eyy],fill=tc,width=1); d.line([exx,eyy,exx,eyy-q[1]*10],fill=tc,width=1)
+            d.text((ex_-bw,ey_-bw-14),"TARGET",font=m12,fill=tc)
+        elif kind=="ar_retreat":
+            d.rectangle([px,py+18,px+pw,py+36],fill=al((44,10,8),0.78)); d.text((px+5,py+20),"AR> RETREAT — EXIT 8m",font=m13,fill=RED)
+            cxp,cyp=px+pw*0.5,py+ph*0.55
+            for k in range(4):
+                t=(k+(flocal*0.16)%1)/4; sx=cxp-(pw*0.32)*t; s=8+9*t
+                d.line([sx+s,cyp-s,sx,cyp],fill=RED,width=3); d.line([sx+s,cyp+s,sx,cyp],fill=RED,width=3)
+        elif kind=="estop":
+            d.rectangle([px,py+18,px+pw,py+36],fill=al((44,10,8),0.78)); d.text((px+5,py+20),"** ALL STOP — EVACUATE **",font=m13,fill=RED)
+    if act and act[0]=="ar_route" and flocal>(c["b"]-c["a"])*0.7:
+        d.text((px+pw*0.5,py+ph*0.5),"[ SURVIVOR SECURED ]",font=m14,fill=GRN,anchor="mm")
 
-    # ── 알림 배너(탐지 순간 플래시) ──
-    for e in detects:
-        if 0<=f-e["f"]<FPS*1.4:
-            a=0.7*(1-(f-e["f"])/(FPS*1.4))
-            d.rectangle([0,TOPH,W,TOPH+4],fill=al(CRIT,0.9))
-            bw_=tw(d,"⚠ 생존자 탐지 — 드론 VLM",f_h)+40
-            d.rectangle([(W-bw_)/2,TOPH+10,(W+bw_)/2,TOPH+44],fill=al((40,12,10),0.6+a*0.3))
-            text(d,(W/2,TOPH+27),"⚠ 생존자 탐지 — 드론 VLM",f_h,(255,210,205),anchor="mm")
+    # ── 알림: 반전 모노 바(스트라이프 없음) ──
+    if c["alert"]:
+        ak,atext=c["alert"]; col={"SURVIVOR":RED,"DANGER":RED,"BACKDRAFT":RED,"GAS":AMB}[ak]
+        blink = (f//6)%2==0 or ak=="SURVIVOR"
+        line=f"*** {ak}: {atext} ***"
+        wpx=tw(d,line,k15 if hangul(line) else m15)+24; bx=(W-wpx)/2
+        d.rectangle([bx,TOPH+8,bx+wpx,TOPH+32],fill=col if blink else tuple(int(v*0.5) for v in col))
+        T(d,(bx+12,TOPH+11),line,(10,10,12),sz=15)
 
-    # ── 하단: 명령 스트립 + AR 명령 카드 + E-STOP ──
+    # ── 하단: 커맨드 라인 + E-STOP ──
     d=ImageDraw.Draw(img,"RGBA")
-    by=H-BOTH
-    text(d,(18,by+10),"COMMAND · VISOR-1",f_mos,FNT)
-    cmds=["ADVANCE","REROUTE","AR-경로","AR-마커","수색","후퇴","CONFIRM"]
-    x=18; cy=by+34
-    ar_active = any(f>=e["f"] for e in ar_cmds) and not any(f>=r["f"] for r in rescues)
-    for i,c in enumerate(cmds):
-        hot = (c=="AR-경로" and ar_active)
-        col = ACC if hot else TX
-        if hot: d.rectangle([x-5,cy-3,x+tw(d,c,f_ui)+8,cy+40],fill=al(ACC,0.16))
-        text(d,(x,cy),c,f_ui,col)
-        key=["1","2","3","4","5","6","↵"][i]
-        d.rectangle([x,cy+26,x+13,cy+40],fill=al(TX,0.08)); text(d,(x+3,cy+27),key,f_mos,DIM)
-        x+=tw(d,c,f_ui)+34
-    # E-STOP
-    ew=168; exx=W-ew-16; ey=by+22
-    d.rectangle([exx,ey,exx+ew,ey+50],outline=CRIT,width=2,fill=al(CRIT,0.12))
-    d.ellipse([exx+12,ey+13,exx+38,ey+39],fill=CRIT)
-    text(d,(exx+48,ey+8),"E-STOP",f_ui,CRIT); text(d,(exx+48,ey+30),"전대원 후퇴",f_sm,(235,150,145))
-    text(d,(18,H-18),"화면 컨트롤 = CONSOLE-1 물리버튼 = 키보드 · control_map 단일원천",f_mos,FNT)
+    by=H-BOTH+10
+    hot={"ar_route":"AR-ROUTE","ar_retreat":"AR-RETREAT","estop":"E-STOP","gas":"GAS-OFF"}.get(c["action"][0] if c["action"] else None)
+    cmds=["ADVANCE","REROUTE","AR-ROUTE","AR-RETREAT","GAS-OFF","SEARCH","CONFIRM"]
+    d.text((10,by),f"cmd {aw.lower()}:",font=m14,fill=DIM)
+    x=120
+    for i,cmd in enumerate(cmds):
+        on=(cmd==hot); key=["1","2","3","4","5","6","ENT"][i]
+        s=f"[{key}]" + (f">{cmd}<" if on else cmd)
+        col=(RED if c["action"] and c["action"][0] in("ar_retreat","estop") else CYN) if on else DIM
+        d.text((x,by),s,font=m14,fill=col); x+=tw(d,s,m14)+14
+    # 두번째 줄: 상태
+    d.text((10,by+22),f"twin {fr.get('explored',0)*100:3.0f}%  pts {CUM[f]:,}  survivors {sum(1 for e in events if e['kind']=='detect' and f>=e['f'])}/2  scenario {c['code']}/06",font=m13,fill=MUT)
+    d.text((10,by+40),"ui = console-1 keys = mouse  ·  control_map single-source  ·  feed: exeter fd (archive.org)",font=m12,fill=MUT)
+    # E-STOP (반전 블록)
+    es = c["action"] and c["action"][0]=="estop"
+    ew=150; exx=W-ew-12; ey=by
+    d.rectangle([exx,ey,exx+ew,ey+50],fill=RED if es else (40,16,14),outline=RED,width=1)
+    d.text((exx+ew/2,ey+16),"E-STOP",font=m17,fill=(12,10,10) if es else RED,anchor="mm")
+    d.text((exx+ew/2,ey+36),"all retreat",font=m12,fill=(12,10,10) if es else AMB,anchor="mm")
 
     img.save(os.path.join(OUTD,f"c_{f:04d}.png"))
 
 if __name__=="__main__":
-    lo=int(sys.argv[3]) if len(sys.argv)>3 else 0
-    hi=int(sys.argv[4]) if len(sys.argv)>4 else NF
+    lo=int(sys.argv[3]) if len(sys.argv)>3 else 0; hi=int(sys.argv[4]) if len(sys.argv)>4 else NF
     for f in range(lo,hi):
         compose(f)
         if f%30==0: print("frame",f,flush=True)

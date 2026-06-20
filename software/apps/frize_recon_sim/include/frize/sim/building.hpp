@@ -19,12 +19,14 @@ struct Box { Vec3f lo, hi; const char* kind; float temp_c; };
 
 class Building {
 public:
-    Vec3f fire{4.0f,2.4f,0.9f};      // 주 화점(1층 좌측방)
-    Vec3f fire2{15.0f,11.0f,3.4f};   // 2차 화점(2층 우측방)
-    Vec3f victim{17.5f,3.0f,0.0f};   // 요구조자 1(1층 우하 코너방)
-    Vec3f victim2{3.0f,12.5f,6.4f};  // 요구조자 2(3층 좌상)
-    float W=20.0f, D=15.0f, H=9.6f;  // 더 큰 3층 구조
-    std::vector<float> floor_z{0.0f, 3.2f, 6.4f};
+    // ── 영상(Exeter FD 내부수색) 역설계: 단층 복도+병실형 institutional 건물 ──
+    //  서쪽 현관 → 중앙 동서 복도 → 양옆 4+4 병실(침대/캐비닛/창) → 동쪽 밝은 출구.
+    Vec3f fire{3.6f,2.2f,0.8f};       // 주 화점(남서 주방, 가스레인지 옆)
+    Vec3f fire2{16.0f,9.2f,0.8f};     // 2차 화점(북측 병실)
+    Vec3f victim{22.8f,2.2f,0.0f};    // 요구조자1(남동 끝방 바닥)
+    Vec3f victim2{2.6f,9.8f,0.0f};    // 요구조자2(북서 병실 바닥)
+    float W=26.0f, D=12.0f, H=3.2f;   // 단층, 천장 3.0m
+    std::vector<float> floor_z{0.0f};
 
     Building(){ build(); }
     const std::vector<Box>& boxes() const { return boxes_; }
@@ -85,48 +87,49 @@ private:
 
     void build(){
         const float NaN=std::numeric_limits<float>::quiet_NaN();
-        float st=0.22f;
-        for (float fz:floor_z) boxes_.push_back({{0,0,fz-st},{W,D,fz},"slab",NaN});
+        float st=0.20f, zt=3.0f;
+        // 바닥/천장
+        boxes_.push_back({{0,0,-st},{W,D,0},"slab",NaN});
         boxes_.push_back({{0,0,H-st},{W,D,H},"roof",NaN});
 
-        float cy0=6.6f, cy1=8.4f;       // 중앙 동서 복도(y 6.6~8.4)
-        for (size_t fl=0; fl<floor_z.size(); ++fl){
-            float fz=floor_z[fl], zt=fz+2.8f;
-            // 외벽(남벽에 현관 갭은 1층만)
-            if (fl==0) wall_door(true, 0,W, 0, fz,zt, 8.0f, 1.4f); else wall(0,0,W,0,fz,zt);
-            wall(0,D,W,D,fz,zt); wall(0,0,0,D,fz,zt); wall(W,0,W,D,fz,zt);
-            // 중앙 복도 양벽(여러 출입구 갭)
-            wall_door(true, 0,W, cy0, fz,zt, 3.0f); wall_door(true, 3.0f+1.1f,W, cy0, fz,zt, 9.0f);
-            wall_door(true, 0,W, cy1, fz,zt, 6.0f); wall_door(true, 6.0f+1.1f,W, cy1, fz,zt, 14.0f);
-            // 남측 방 칸막이(3개 방)
-            wall_door(false, 0,cy0, 6.5f, fz,zt, 2.0f);
-            wall_door(false, 0,cy0, 13.0f, fz,zt, 2.5f);
-            // 북측 방 칸막이(3개 방)
-            wall_door(false, cy1,D, 5.0f, fz,zt, cy1+1.0f);
-            wall_door(false, cy1,D, 11.5f, fz,zt, D-1.5f);
-            // 계단실 코어(좌측, 층 관통 ― 벽 3면 + 개구부)
-            wall(0.0f,1.5f,2.2f,1.5f,fz,zt); wall(2.2f,1.5f,2.2f,4.0f,fz,zt);
-            wall_door(true,0,2.2f,4.0f,fz,zt,0.6f,1.0f);
-            // 계단 단(시각적 디테일, 1·2층)
-            if (fl<2) for(int s=0;s<8;++s) boxes_.push_back({{0.3f+s*0.22f,2.0f,fz+s*0.34f},{2.0f,3.6f,fz+s*0.34f+0.18f},"stair",NaN});
-        }
-        // 가구(층별 다수)
+        float cy0=5.0f, cy1=7.0f;     // 중앙 동서 복도(y 5.0~7.0, 폭 2m)
+        // 외벽: 서쪽 현관 갭 + 동쪽 출구 갭(밝은 끝), 남/북 외벽
+        wall_door(false, 0,D, 0.0f, 0,zt, 5.2f, 1.6f);   // 서벽 현관(복도로)
+        wall_door(false, 0,D, W,    0,zt, 5.2f, 1.6f);   // 동벽 출구(밝은 끝)
+        // 남/북 외벽(병실 창 갭 몇 개)
+        wall(0,0,3.0f,0,0,zt); wall(4.2f,0,9.5f,0,0,zt); wall(10.7f,0,16.0f,0,0,zt); wall(17.2f,0,W,0,0,zt);
+        wall(0,D,6.0f,D,0,zt); wall(7.2f,D,13.0f,D,0,zt); wall(14.2f,D,W,D,0,zt);
+        // 복도 양벽(병실 출입구 갭 4개씩)
+        const float doors[4]={3.25f,9.75f,16.0f,22.5f};
+        auto corridor=[&](float yy){ float x=0; for(int i=0;i<4;++i){ float dl=doors[i]-0.55f;
+            if(dl>x) wall(x,yy,dl,yy,0,zt); x=doors[i]+0.55f; } if(x<W) wall(x,yy,W,yy,0,zt); };
+        corridor(cy0); corridor(cy1);
+        // 병실 칸막이(남측 4실 / 북측 4실) ― x=6.5,13,19.5
+        for (float xx : {6.5f,13.0f,19.5f}){ wall(xx,0,xx,cy0,0,zt); wall(xx,cy1,xx,D,0,zt); }
+
+        // ── 가구(병실마다 침대/캐비닛) ──
         struct F{float x0,y0,z0,x1,y1,z1;};
         F furn[]={
-            {1.0f,9.5f,0, 3.6f,11.8f,0.9f},{8.5f,1.0f,0, 10.4f,2.8f,1.5f},{16.5f,9.5f,0, 18.8f,11.4f,1.1f},
-            {12.0f,1.2f,0, 13.0f,3.2f,1.9f},{4.5f,10.0f,3.2f, 6.5f,12.0f,1.0f+3.2f},
-            {15.0f,2.0f,3.2f, 16.6f,4.0f,3.2f+1.4f},{9.0f,10.5f,6.4f, 11.0f,12.5f,6.4f+0.9f},
-            {2.5f,2.0f,6.4f, 4.0f,3.6f,6.4f+1.6f},
+            // 남측 병실 침대들
+            {0.6f,0.5f,0, 2.4f,3.2f,0.6f}, {7.0f,0.5f,0, 8.8f,3.2f,0.6f},
+            {13.5f,0.5f,0,15.3f,3.2f,0.6f},{20.0f,0.5f,0,21.8f,3.2f,0.6f},
+            // 북측 병실 침대/캐비닛
+            {0.6f,9.0f,0, 2.4f,11.6f,0.6f},{7.0f,9.0f,0, 8.8f,11.6f,0.6f},
+            {17.0f,9.0f,0,18.8f,11.6f,0.6f},
+            // 캐비닛/사물함
+            {5.4f,0.4f,0, 6.2f,1.6f,1.7f}, {18.6f,9.0f,0,19.3f,10.6f,1.7f},
+            {12.0f,9.2f,0,12.8f,10.8f,1.5f},
         };
         for (auto&f:furn) boxes_.push_back({{f.x0,f.y0,f.z0},{f.x1,f.y1,f.z1},"furniture",NaN});
-        // 주방: 가스레인지(발화원). 1층 좌측방 ― 화점 바로 옆(누출/과열 시나리오).
-        boxes_.push_back({{2.8f,1.0f,0.0f},{4.4f,1.9f,0.9f},"gas_range",110.0f}); // 레인지 상판 가열
-        boxes_.push_back({{2.8f,1.0f,0.9f},{4.4f,1.9f,1.6f},"range_hood",NaN});   // 후드
-        // 화점 2개 + 요구조자 2개
-        boxes_.push_back({{3.2f,1.6f,0},{4.8f,3.2f,1.7f},"fire",640.0f});        // 1층 좌 화점
-        boxes_.push_back({{14.2f,10.2f,3.2f},{15.8f,11.8f,3.2f+1.5f},"fire",520.0f}); // 2층 우 화점
-        boxes_.push_back({{17.0f,2.4f,0},{17.9f,3.6f,0.8f},"person",36.5f});     // 요구조자1(1층)
-        boxes_.push_back({{2.5f,12.0f,6.4f},{3.4f,12.9f,6.4f+0.8f},"person",35.0f}); // 요구조자2(3층)
+
+        // 주방(남서 끝방): 가스레인지(발화원) + 후드
+        boxes_.push_back({{4.6f,0.5f,0.0f},{6.2f,1.6f,0.9f},"gas_range",115.0f});
+        boxes_.push_back({{4.6f,0.5f,1.9f},{6.2f,1.6f,2.4f},"range_hood",NaN});
+        // 화점 2 + 요구조자 2 (영상 위치 반영: 남서 주방화재, 북측 병실, 남동/북서 바닥)
+        boxes_.push_back({{2.8f,1.4f,0},{4.6f,3.4f,1.7f},"fire",640.0f});           // 남서 주방 화점
+        boxes_.push_back({{15.0f,8.4f,0},{16.8f,10.0f,1.5f},"fire",520.0f});        // 북측 병실 화점
+        boxes_.push_back({{22.2f,1.6f,0},{23.4f,2.8f,0.7f},"person",36.5f});        // 요구조자1(남동 끝방)
+        boxes_.push_back({{2.0f,9.2f,0},{3.2f,10.4f,0.7f},"person",35.0f});         // 요구조자2(북서 병실)
     }
 };
 

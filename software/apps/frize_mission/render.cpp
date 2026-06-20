@@ -63,10 +63,10 @@ static GLuint comp(GLenum t,const char*s){GLuint sh=glCreateShader(t);glShaderSo
 
 static const char* VS=R"(#version 330 core
 layout(location=0) in vec3 aPos; layout(location=1) in vec3 aCol; layout(location=2) in float aReveal;
-uniform mat4 uMVP; uniform vec3 uCam; uniform float uFrame;
+uniform mat4 uMVP; uniform vec3 uCam; uniform float uFrame; uniform float uCutZ;
 out vec3 vCol; out float vHeat; out float vFade;
 void main(){
-    if(aReveal>uFrame){ gl_Position=vec4(2.0,2.0,2.0,1.0); gl_PointSize=0.0; return; } // 미래 점 클립
+    if(aReveal>uFrame || aPos.z>uCutZ){ gl_Position=vec4(2.0,2.0,2.0,1.0); gl_PointSize=0.0; return; } // 미래/천장 클립
     vCol=aCol; vHeat=clamp((aCol.r-aCol.b)*1.6-0.1,0.0,1.0);
     vFade=clamp(1.0-(uFrame-aReveal)/6.0,0.0,1.0);   // 갓 찍힌 점 반짝
     vec4 cs=uMVP*vec4(aPos,1.0); gl_Position=cs;
@@ -102,6 +102,7 @@ int main(int argc,char**argv){
     int W=argc>3?std::atoi(argv[3]):1280, H=argc>4?std::atoi(argv[4]):720;
     int LO=argc>5?std::atoi(argv[5]):0, HI=argc>6?std::atoi(argv[6]):-1; // 프레임 범위(캘리브레이션)
     int SAMP=argc>7?std::atoi(argv[7]):2;                                 // MSAA
+    float CUTZ=argc>8?std::atof(argv[8]):2.5f;                            // 천장 컷(돌하우스)
 
     std::string mj; { std::ifstream f(dir+"/mission.json"); std::stringstream ss; ss<<f.rdbuf(); mj=ss.str(); }
     int NF=jint(mj,"nframes",170); long NP=jint(mj,"npoints",0);
@@ -150,9 +151,9 @@ int main(int argc,char**argv){
 
     for(int f=0; f<NF; ++f){
         // 느린 궤도 + 살짝 상하 흔들림(현장감)
-        float az=-1.15f + 0.9f*((float)f/NF);   // 천천히 회전
-        float el=0.62f + 0.05f*std::sin(f*0.05f);
-        float dist=span*1.42f;
+        float az=-1.05f + 0.78f*((float)f/NF);   // 천천히 회전
+        float el=0.56f + 0.04f*std::sin(f*0.05f);
+        float dist=span*1.18f;
         V3 eye={ctr.x+dist*std::cos(az)*std::cos(el), ctr.y+dist*std::sin(az)*std::cos(el), ctr.z+dist*std::sin(el)};
         M4 P=persp(42.f*3.14159f/180.f,(float)W/H,0.4f,400.f), Vm=look(eye,ctr,{0,0,1}), MVP=mul(P,Vm);
         for(int i=0;i<16;i++) cams.push_back(MVP.m[i]);
@@ -162,6 +163,7 @@ int main(int argc,char**argv){
         glUniformMatrix4fv(glGetUniformLocation(prog,"uMVP"),1,GL_FALSE,MVP.m);
         glUniform3f(glGetUniformLocation(prog,"uCam"),eye.x,eye.y,eye.z);
         glUniform1f(glGetUniformLocation(prog,"uFrame"),(float)f);
+        glUniform1f(glGetUniformLocation(prog,"uCutZ"),CUTZ);
         glClearColor(0.012f,0.017f,0.027f,1.f);glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
         glDrawArrays(GL_POINTS,0,(GLsizei)n);
         glBindFramebuffer(GL_READ_FRAMEBUFFER,fbo);glBindFramebuffer(GL_DRAW_FRAMEBUFFER,rfbo);
