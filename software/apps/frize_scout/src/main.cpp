@@ -76,6 +76,7 @@ int main() {
 
     // 프런티어 탐사 상태
     bool exploring=false; Vec3 cur_target{}; bool have_target=false;
+    bool investigating=false;   // 명시적 태스킹("저기 먼저 조사해") 진행 중 ― 프런티어 가로채기
 
     auto ack = [&](const Command& c, CommandStatus s, const std::string& d){
         CommandAck a; a.cmd_id=c.cmd_id; a.device_id=device_id; a.status=s; a.detail=d;
@@ -106,7 +107,22 @@ int main() {
                 } else ack(c, CommandStatus::Failed, "목표 좌표 없음");
                 break;
             }
-            case CommandAction::Hold: exploring=false; flight->hold(); ack(c, CommandStatus::Done, "호버"); break;
+            case CommandAction::InvestigatePoint: {  // 명시적 태스킹: "저기 먼저 조사해!"
+                auto& p = c.params;
+                if (p.contains("world_pos")) {
+                    auto w = p["world_pos"];
+                    Vec3 t{ w.value("x",0.0), w.value("y",0.0), w.value("z",0.0) };
+                    t.z = std::max(t.z, 3.0) + 2.0;                 // 안전 고도
+                    if (!flight_armed_) { flight->takeoff(t.z); flight_armed_ = true; }
+                    cur_target = t; have_target = true; investigating = true;
+                    // 조사 후 자율탐사 재개 여부(기본 재개)
+                    if (!p.value("then_resume", true)) exploring = false; else exploring = true;
+                    flight->goto_local(t, geo::bearing_deg(home, t)*geo::DEG2RAD);
+                    ack(c, CommandStatus::Executing, "지정 지점 우선 조사 → 자율탐사 재개");
+                } else ack(c, CommandStatus::Failed, "목표 좌표 없음");
+                break;
+            }
+            case CommandAction::Hold: exploring=false; investigating=false; flight->hold(); ack(c, CommandStatus::Done, "호버"); break;
             case CommandAction::Rtl:  exploring=false; flight->return_to_launch(); ack(c, CommandStatus::Executing, "복귀"); break;
             case CommandAction::Land: exploring=false; flight->land(); ack(c, CommandStatus::Executing, "착륙"); break;
             default: ack(c, CommandStatus::Failed, "드론 미지원 명령"); break;
@@ -137,6 +153,7 @@ int main() {
         // 자율 프런티어 탐사: 목표 도달 or 미설정이면 가장 가까운 프런티어 선택(빈곳 채움)
         if (exploring) {
             if (!have_target || geo::horizontal_distance(st.position, cur_target) < 2.5) {
+                if (investigating) investigating = false;   // 지정 지점 조사 완료 → 자율탐사 재개
                 std::lock_guard<std::mutex> lk(fmtx);
                 double best = 1e18; bool found=false; Vec3 bp{};
                 for (auto& f : frontiers_w) {

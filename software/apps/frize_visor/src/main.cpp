@@ -86,6 +86,11 @@ int main() {
     bus.subscribe(Topic::command(device_id), [&](const std::string&, const Envelope& e){
         std::lock_guard<std::mutex> lk(qmtx); cmdq.push_back(e.as<Command>());
     });
+    // AR 큐(지휘관이 이 고글에 직접 띄우는 텍스트/화살표/마커/경로/경고)
+    std::deque<ArCue> arq;
+    bus.subscribe(Topic::ar_cue(device_id), [&](const std::string&, const Envelope& e){
+        std::lock_guard<std::mutex> lk(qmtx); arq.push_back(e.as<ArCue>());
+    });
     bus.start();
 
     auto ack = [&](const Command& c, CommandStatus s, const std::string& d){
@@ -126,6 +131,29 @@ int main() {
             ack(c, CommandStatus::Done, "AR 표시");
         }
 
+        // AR 큐 처리(지휘관이 띄운 텍스트/화살표/마커/경로) → 고글 디스플레이
+        for (;;) {
+            ArCue q; { std::lock_guard<std::mutex> lk(qmtx); if (arq.empty()) break; q=arq.front(); arq.pop_front(); }
+            visor::ArCommand a;
+            a.severity = (q.severity==Severity::Critical)?"critical":(q.severity==Severity::High?"high":"info");
+            a.text = q.text;
+            switch (q.kind) {
+                case ArCueKind::Text:    a.kind="annotate"; break;
+                case ArCueKind::Warning: a.kind="evacuate"; break;
+                case ArCueKind::Highlight:a.kind="highlight"; break;
+                case ArCueKind::Marker:  a.kind="highlight"; break;
+                case ArCueKind::Route:   a.kind="advance"; if(a.text.empty()) a.text="경로 따라 이동"; break;
+                case ArCueKind::Arrow:   a.kind="advance"; break;
+            }
+            // 화살표/경로/마커: 목표 방향을 머리 기준 상대 방위로
+            Vec3 tgt = q.world_to ? *q.world_to : (q.world_pos ? *q.world_pos
+                       : (!q.route.empty() ? q.route.back() : Vec3{0,0,0}));
+            if (q.world_to || q.world_pos || !q.route.empty())
+                a.bearing_deg = std::fmod(geo::bearing_deg(last.pose.position, tgt)
+                                  - geo::yaw_from_quat(last.pose.orientation)*geo::RAD2DEG + 360.0, 360.0);
+            ar->show(a);
+        }
+
         // 텔레메트리 5Hz
         if (std::chrono::duration<double>(now-t_tel).count()>=0.2) {
             t_tel=now;
@@ -134,6 +162,9 @@ int main() {
             t.pose=last.pose; t.battery_pct=last.battery_pct;
             t.gas=last.gas; t.ambient_temp_c=last.ambient_temp_c;
             t.vitals=last.vitals; t.compute_temp_c=last.compute_temp_c;
+            // 측위 소스(NAV 포드): 실내 UWB 앵커 가시 → uwb, 아니면 IMU 추측항법
+            t.pos_source = std::getenv("FRIZE_POS_SOURCE") ? std::getenv("FRIZE_POS_SOURCE") : "uwb";
+            t.pos_accuracy_m = (t.pos_source=="uwb") ? 0.18 : (t.pos_source=="gnss" ? 1.5 : 4.0);
             t.state = (idlh||fall) ? DeviceState::Critical
                      : (last.battery_pct<15 ? DeviceState::Degraded : DeviceState::Online);
             bus.publish(Topic::telemetry(device_id), Envelope::wrap(MessageType::Telemetry, device_id, t), 0);
