@@ -35,12 +35,16 @@ struct Mesh {
         return a;
     }
 
-    // 온도 → 컬러 램프(차가운 회청 → 주황 → 백열). NaN=중립 회색.
+    // 온도 → 컬러 램프(차가운 청회 → 주황 → 황백). 청색은 고온에서 낮게 유지해야
+    // 불이 보라색이 아니라 '불색'으로 보이고, R-B(열) 기반 발광도 강하게 걸린다.
+    // NaN=중립 회색.
     static Vec3f thermal_color(float t){
-        if (std::isnan(t)) return {0.62f,0.66f,0.70f};
-        float x = std::max(0.f, std::min(1.f, (t-20.f)/580.f));
-        if (x < 0.5f){ float u=x/0.5f; return {0.20f+0.75f*u, 0.32f+0.45f*u, 0.40f-0.30f*u}; }
-        float u=(x-0.5f)/0.5f; return {0.95f, 0.77f-0.47f*u, 0.10f+0.85f*u};
+        if (std::isnan(t)) return {0.60f,0.64f,0.69f};
+        float x = std::max(0.f, std::min(1.f, (t-20.f)/600.f));
+        if (x < 0.5f){ float u=x/0.5f;                 // 청회 → 주황
+            return {0.26f+0.66f*u, 0.33f+0.24f*u, 0.44f-0.34f*u}; }   // →(0.92,0.57,0.10)
+        float u=(x-0.5f)/0.5f;                          // 주황 → 황백(청색은 낮게)
+        return {0.92f+0.08f*u, 0.57f+0.34f*u, 0.10f+0.26f*u};         // →(1.00,0.91,0.36)
     }
     void colorize(){
         c.resize(v.size());
