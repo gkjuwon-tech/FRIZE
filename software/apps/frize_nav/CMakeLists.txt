@@ -18,6 +18,11 @@ add_executable(frize_nav_dump_obstacles dump_obstacles.cpp)
 target_compile_features(frize_nav_dump_obstacles PRIVATE cxx_std_17)
 target_include_directories(frize_nav_dump_obstacles PRIVATE ${_NAV_SIM_INC})
 
+# 고글 1인칭 AR 뷰 장면 덤프(실제 A* 경로 + ar_project 투영 → goggle_render.py 가 렌더)
+add_executable(frize_nav_goggle goggle.cpp)
+target_compile_features(frize_nav_goggle PRIVATE cxx_std_17)
+target_include_directories(frize_nav_goggle PRIVATE ${_NAV_SIM_INC})
+
 if(FRIZE_BUILD_TESTS)
     add_executable(frize_nav_test test_nav.cpp)
     target_compile_features(frize_nav_test PRIVATE cxx_std_17)
