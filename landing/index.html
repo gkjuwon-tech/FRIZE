@@ -14,7 +14,7 @@
 </div></header>
 <section class="hero">
   <div class="ticks"><span class="tl"></span><span class="tr"></span><span class="bl"></span><span class="br"></span></div>
-  <div class="hero-bg"><img src="assets/cockpit_hero.jpg" alt="FRIZE 지휘 콕핏"></div>
+  <div class="hero-bg"><img src="assets/scene_fire.jpg" alt="화재 현장 — 소방 대응"></div>
   <div class="hero-in">
     <div class="eyebrow rv"><span class="i">●</span>&nbsp;&nbsp;FIRE-RESPONSE INTEGRATED ZONE-CONTROL ENVIRONMENT</div>
     <h1 class="rv">연기 속에서,<br>지휘는 <em>멈추지 않는다.</em></h1>
@@ -45,32 +45,34 @@
   </div>
 </section>
 
-<section class="sec" style="padding-top:0;padding-bottom:0;border:0" id="capabilities">
+<section class="sec" style="padding-top:0;padding-bottom:0;border:0" id="hardware">
   <div class="frow">
-    <div class="ftext rv">
-      <div class="kicker"><span class="ln"></span>01 — DIGITAL TWIN</div>
-      <h3>보이지 않던 내부가,<br>형태로 드러난다</h3>
-      <p>드론 LiDAR와 고글 깊이 스캔을 누적 융합해 큐브 떡이 아닌 '진짜 표면'을 만듭니다. 복도·방·가구·화점이 드러나고, 화점의 열은 색으로 입혀집니다. 아직 못 본 곳은 비어 있어 어디를 더 봐야 하는지가 명확합니다.</p>
-      <ul>
-        <li><b>실시간 누적</b> — 탐사 진행에 따라 트윈이 채워짐</li>
-        <li><b>열화상 융합</b> — 표면에 온도 채널을 입혀 화점 시각화</li>
-        <li><b>프런티어</b> — 미탐사 영역을 드론 자율 탐사 목표로 환류</li>
-      </ul>
-    </div>
-    <figure class="fmedia rv"><span class="badge">RECON / TWIN</span><img src="assets/twin.jpg" alt="디지털 트윈 컷어웨이"><figcaption><span>TSDF SURFACE · CUTAWAY</span><span>RECON 55% · 2.4M PTS</span></figcaption></figure>
-  </div>
+    <div class="ftext rv"><div class="kicker"><span class="ln"></span>HARDWARE — VISOR</div><h3>대원의 눈,<br>스마트 고글</h3>
+      <p>열화상과 저조도 카메라로 연기를 뚫고, 시야 위에 AR 정보를 겹칩니다. UWB·위성 측위로 실내외 위치를 잡고, 가스 4종을 실시간 감시합니다.</p><ul><li><b>열화상 + 저조도 RGB</b></li><li><b>UWB · GNSS 측위 융합</b></li><li><b>AR 디스플레이 · NFPA 헬멧 마운트</b></li></ul></div>
+    <figure class="fmedia rv"><span class="badge">DEVICE · VISOR-1</span><img src="assets/dev_visor.jpg" alt="대원의 눈,<br>스마트 고글"><figcaption><span>SMART VISOR</span><span>EDGE AI · THERMAL</span></figcaption></figure></div>
   <div class="frow rev">
-    <div class="ftext rv">
-      <div class="kicker"><span class="ln"></span>03 — AR NAVIGATION</div>
-      <h3>목표만 찍으면,<br>길이 그려진다</h3>
-      <p>지휘관이 목표 지점과 대원을 지정하면, 시스템이 벽을 피하고 문을 통과하는 경로를 계산해 대원 고글에 바닥 화살표로 띄웁니다. 대원이 한 걸음 옮길 때마다 경로가 다시 계산되고, 코너에서는 회전 방향이 바뀌며, 도착하면 스스로 종료됩니다.</p>
-      <ul>
-        <li><b>실시간 재유도</b> — 위치 갱신마다 경로 재계산 (~5Hz)</li>
-        <li><b>벽 회피·우회</b> — 막다른 길로 안내하지 않음</li>
-        <li><b>회전·거리 안내</b> — 좌/직/우 + 남은 거리 표시</li>
-      </ul>
-    </div>
-    <figure class="fmedia rv"><span class="badge">VISOR / AR</span><img src="assets/goggle.jpg" alt="고글 AR 길안내"><figcaption><span>POV · VISOR-1 · 1인칭</span><span>A* RE-PLAN · 5Hz</span></figcaption></figure>
+    <div class="ftext rv"><div class="kicker"><span class="ln"></span>HARDWARE — SCOUT</div><h3>먼저 들어가는 눈,<br>정찰 드론</h3>
+      <p>대원보다 먼저 진입해 연기 속을 LiDAR로 훑습니다. 여러 대가 구역을 나눠 자율 비행하며, UWB 측위 비콘을 투하해 실내 측위망을 구성합니다.</p><ul><li><b>연기 투과 LiDAR · 열화상 짐벌</b></li><li><b>자율 프런티어 탐사</b></li><li><b>UWB 앵커 디스펜서 (3발)</b></li></ul></div>
+    <figure class="fmedia rv"><span class="badge">DEVICE · SCOUT-1</span><img src="assets/dev_scout.jpg" alt="먼저 들어가는 눈,<br>정찰 드론"><figcaption><span>RECON DRONE</span><span>LiDAR · AUTONOMY</span></figcaption></figure></div>
+</section>
+
+<section class="sec" id="operator">
+  <div class="wrap">
+    <div class="kicker rv" style="margin-bottom:18px"><span class="ln"></span>OPERATOR ACCESS · RESTRICTED</div>
+    <h2 class="sec-head" style="padding:0">실시간 트윈·콕핏·고글 화면은<br>운영자에게만 공개됩니다</h2>
+    <p class="muted rv" style="max-width:64ch;margin:16px 0 4px">지휘 콕핏의 디지털 트윈, AI 탐지, AR 길안내 화면은 운용 보안상 일반 공개하지 않습니다. 현장 데모 요청 또는 도입 기관에 한해 제공됩니다.</p>
+  </div>
+  <div class="gate-grid" style="margin-top:clamp(28px,4vh,44px)">
+    <div class="gate rv"><span class="chip">TWIN // CLASSIFIED</span>
+  <span class="corner c1"></span><span class="corner c2"></span><span class="corner c3"></span>
+  <span class="redact r1">REDACTED — RECON SURFACE</span><span class="redact r2">REDACTED — RECON SURFACE</span>
+  <div class="gate-body"><div class="lk"></div><h4>DIGITAL TWIN</h4><p>실시간 3D 재구성 화면 · 운영자 전용</p>
+  <a class="unlock" href="demo.html">데모 요청 시 공개 →</a></div></div>
+    <div class="gate rv"><span class="chip">COCKPIT // CLASSIFIED</span>
+  <span class="corner c1"></span><span class="corner c2"></span><span class="corner c3"></span>
+  <span class="redact r1">REDACTED — OPERATOR VIEW</span><span class="redact r2">REDACTED — OPERATOR VIEW</span>
+  <div class="gate-body"><div class="lk"></div><h4>COMMAND COCKPIT</h4><p>콕핏 · 고글 AR 화면 · 운영자 전용</p>
+  <a class="unlock" href="demo.html">데모 요청 시 공개 →</a></div></div>
   </div>
 </section>
 
@@ -164,7 +166,7 @@
   <div class="copy">© 2026 FRIZE INC. ALL RIGHTS RESERVED · 사업자등록 000-00-00000</div>
 </div>
 <div class="ft-credit">
-사진: 「High-Rise Fire Test / Wind-Driven Fires」(U.S. Gov, Public Domain) · 「강원도 소방공무원」「안산 소방차량」(Wikimedia Commons, CC BY-SA) · 고글/콕핏/트윈 이미지는 FRIZE 자체 엔진 렌더(내부 산출물). 본 페이지의 수치·임계값은 현재 빌드의 검증값이며 사양은 고지 없이 변경될 수 있습니다. 본 사이트는 데모용 정적 페이지로 일부 링크는 비활성입니다.
+사진: 「High-Rise Fire Test / Wind-Driven Fires」(U.S. Gov, Public Domain) · 「강원도 소방공무원」「안산 소방차량」(Wikimedia Commons, CC BY-SA). 하드웨어 비주얼은 FRIZE 자체 3D 렌더(내부 산출물)입니다. 실시간 시스템 화면(디지털 트윈 · 지휘 콕핏 · 고글 AR)은 운용 보안상 일반 공개하지 않으며, 현장 데모 요청 또는 도입 기관에 한해 제공됩니다. 본 페이지의 수치·임계값은 현재 빌드의 검증값으로 사양은 고지 없이 변경될 수 있습니다. 본 사이트는 데모용 정적 페이지로 일부 링크는 비활성입니다.
 </div>
 </footer>
 <script src="app.js"></script></body></html>

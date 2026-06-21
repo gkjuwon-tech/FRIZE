@@ -73,7 +73,7 @@ FOOTER="""<footer class="ft">
   <div class="copy">© 2026 FRIZE INC. ALL RIGHTS RESERVED · 사업자등록 000-00-00000</div>
 </div>
 <div class="ft-credit">
-사진: 「High-Rise Fire Test / Wind-Driven Fires」(U.S. Gov, Public Domain) · 「강원도 소방공무원」「안산 소방차량」(Wikimedia Commons, CC BY-SA) · 고글/콕핏/트윈 이미지는 FRIZE 자체 엔진 렌더(내부 산출물). 본 페이지의 수치·임계값은 현재 빌드의 검증값이며 사양은 고지 없이 변경될 수 있습니다. 본 사이트는 데모용 정적 페이지로 일부 링크는 비활성입니다.
+사진: 「High-Rise Fire Test / Wind-Driven Fires」(U.S. Gov, Public Domain) · 「강원도 소방공무원」「안산 소방차량」(Wikimedia Commons, CC BY-SA). 하드웨어 비주얼은 FRIZE 자체 3D 렌더(내부 산출물)입니다. 실시간 시스템 화면(디지털 트윈 · 지휘 콕핏 · 고글 AR)은 운용 보안상 일반 공개하지 않으며, 현장 데모 요청 또는 도입 기관에 한해 제공됩니다. 본 페이지의 수치·임계값은 현재 빌드의 검증값으로 사양은 고지 없이 변경될 수 있습니다. 본 사이트는 데모용 정적 페이지로 일부 링크는 비활성입니다.
 </div>
 </footer>
 <script src="app.js"></script></body></html>"""
@@ -82,11 +82,24 @@ def write(slug, html):
     with open(os.path.join(HERE, slug),"w",encoding="utf-8") as f: f.write(html)
     print("wrote", slug)
 
+def spec(dt,dd): return f'<div class="spec-row"><dt>{dt}</dt><dd>{dd}</dd></div>'
+def gate(code,label,chip,redact): return f'''<div class="gate rv"><span class="chip">{chip}</span>
+  <span class="corner c1"></span><span class="corner c2"></span><span class="corner c3"></span>
+  <span class="redact r1">{redact}</span><span class="redact r2">{redact}</span>
+  <div class="gate-body"><div class="lk"></div><h4>{code}</h4><p>{label} · 운영자 전용</p>
+  <a class="unlock" href="demo.html">데모 요청 시 공개 →</a></div></div>'''
+def devrow(rev,kick,h,p,lis,img,badge,cap1,cap2):
+    ul="".join(f"<li>{x}</li>" for x in lis)
+    return f'''<div class="frow{' rev' if rev else ''}">
+    <div class="ftext rv"><div class="kicker"><span class="ln"></span>{kick}</div><h3>{h}</h3>
+      <p>{p}</p><ul>{ul}</ul></div>
+    <figure class="fmedia rv"><span class="badge">{badge}</span><img src="{img}" alt="{h}"><figcaption><span>{cap1}</span><span>{cap2}</span></figcaption></figure></div>'''
+
 # ============================ INDEX ============================
 index_body = """
 <section class="hero">
   <div class="ticks"><span class="tl"></span><span class="tr"></span><span class="bl"></span><span class="br"></span></div>
-  <div class="hero-bg"><img src="assets/cockpit_hero.jpg" alt="FRIZE 지휘 콕핏"></div>
+  <div class="hero-bg"><img src="assets/scene_fire.jpg" alt="화재 현장 — 소방 대응"></div>
   <div class="hero-in">
     <div class="eyebrow rv"><span class="i">●</span>&nbsp;&nbsp;FIRE-RESPONSE INTEGRATED ZONE-CONTROL ENVIRONMENT</div>
     <h1 class="rv">연기 속에서,<br>지휘는 <em>멈추지 않는다.</em></h1>
@@ -117,32 +130,26 @@ index_body = """
   </div>
 </section>
 
-<section class="sec" style="padding-top:0;padding-bottom:0;border:0" id="capabilities">
-  <div class="frow">
-    <div class="ftext rv">
-      <div class="kicker"><span class="ln"></span>01 — DIGITAL TWIN</div>
-      <h3>보이지 않던 내부가,<br>형태로 드러난다</h3>
-      <p>드론 LiDAR와 고글 깊이 스캔을 누적 융합해 큐브 떡이 아닌 '진짜 표면'을 만듭니다. 복도·방·가구·화점이 드러나고, 화점의 열은 색으로 입혀집니다. 아직 못 본 곳은 비어 있어 어디를 더 봐야 하는지가 명확합니다.</p>
-      <ul>
-        <li><b>실시간 누적</b> — 탐사 진행에 따라 트윈이 채워짐</li>
-        <li><b>열화상 융합</b> — 표면에 온도 채널을 입혀 화점 시각화</li>
-        <li><b>프런티어</b> — 미탐사 영역을 드론 자율 탐사 목표로 환류</li>
-      </ul>
-    </div>
-    <figure class="fmedia rv"><span class="badge">RECON / TWIN</span><img src="assets/twin.jpg" alt="디지털 트윈 컷어웨이"><figcaption><span>TSDF SURFACE · CUTAWAY</span><span>RECON 55% · 2.4M PTS</span></figcaption></figure>
+<section class="sec" style="padding-top:0;padding-bottom:0;border:0" id="hardware">
+  """ + devrow(False,"HARDWARE — VISOR","대원의 눈,<br>스마트 고글",
+      "열화상과 저조도 카메라로 연기를 뚫고, 시야 위에 AR 정보를 겹칩니다. UWB·위성 측위로 실내외 위치를 잡고, 가스 4종을 실시간 감시합니다.",
+      ["<b>열화상 + 저조도 RGB</b>","<b>UWB · GNSS 측위 융합</b>","<b>AR 디스플레이 · NFPA 헬멧 마운트</b>"],
+      "assets/dev_visor.jpg","DEVICE · VISOR-1","SMART VISOR","EDGE AI · THERMAL") + """
+  """ + devrow(True,"HARDWARE — SCOUT","먼저 들어가는 눈,<br>정찰 드론",
+      "대원보다 먼저 진입해 연기 속을 LiDAR로 훑습니다. 여러 대가 구역을 나눠 자율 비행하며, UWB 측위 비콘을 투하해 실내 측위망을 구성합니다.",
+      ["<b>연기 투과 LiDAR · 열화상 짐벌</b>","<b>자율 프런티어 탐사</b>","<b>UWB 앵커 디스펜서 (3발)</b>"],
+      "assets/dev_scout.jpg","DEVICE · SCOUT-1","RECON DRONE","LiDAR · AUTONOMY") + """
+</section>
+
+<section class="sec" id="operator">
+  <div class="wrap">
+    <div class="kicker rv" style="margin-bottom:18px"><span class="ln"></span>OPERATOR ACCESS · RESTRICTED</div>
+    <h2 class="sec-head" style="padding:0">실시간 트윈·콕핏·고글 화면은<br>운영자에게만 공개됩니다</h2>
+    <p class="muted rv" style="max-width:64ch;margin:16px 0 4px">지휘 콕핏의 디지털 트윈, AI 탐지, AR 길안내 화면은 운용 보안상 일반 공개하지 않습니다. 현장 데모 요청 또는 도입 기관에 한해 제공됩니다.</p>
   </div>
-  <div class="frow rev">
-    <div class="ftext rv">
-      <div class="kicker"><span class="ln"></span>03 — AR NAVIGATION</div>
-      <h3>목표만 찍으면,<br>길이 그려진다</h3>
-      <p>지휘관이 목표 지점과 대원을 지정하면, 시스템이 벽을 피하고 문을 통과하는 경로를 계산해 대원 고글에 바닥 화살표로 띄웁니다. 대원이 한 걸음 옮길 때마다 경로가 다시 계산되고, 코너에서는 회전 방향이 바뀌며, 도착하면 스스로 종료됩니다.</p>
-      <ul>
-        <li><b>실시간 재유도</b> — 위치 갱신마다 경로 재계산 (~5Hz)</li>
-        <li><b>벽 회피·우회</b> — 막다른 길로 안내하지 않음</li>
-        <li><b>회전·거리 안내</b> — 좌/직/우 + 남은 거리 표시</li>
-      </ul>
-    </div>
-    <figure class="fmedia rv"><span class="badge">VISOR / AR</span><img src="assets/goggle.jpg" alt="고글 AR 길안내"><figcaption><span>POV · VISOR-1 · 1인칭</span><span>A* RE-PLAN · 5Hz</span></figcaption></figure>
+  <div class="gate-grid" style="margin-top:clamp(28px,4vh,44px)">
+    """ + gate("DIGITAL TWIN","실시간 3D 재구성 화면","TWIN // CLASSIFIED","REDACTED — RECON SURFACE") + """
+    """ + gate("COMMAND COCKPIT","콕핏 · 고글 AR 화면","COCKPIT // CLASSIFIED","REDACTED — OPERATOR VIEW") + """
   </div>
 </section>
 
@@ -242,7 +249,6 @@ mission_body = """
 """
 
 # ============================ SYSTEM ============================
-def spec(dt,dd): return f'<div class="spec-row"><dt>{dt}</dt><dd>{dd}</dd></div>'
 system_body = f"""
 <section class="sec" style="border-bottom:0;padding-bottom:clamp(40px,6vh,64px)">
   <div class="wrap">
@@ -252,21 +258,23 @@ system_body = f"""
   </div>
 </section>
 
+<section class="sec" style="padding-top:0;padding-bottom:0;border:0" id="devices">{devrow(False,"HARDWARE — CONSOLE","지휘 콘솔","현장 지휘차의 큰 화면과 전용 물리 콘솔. 화면의 모든 조작이 물리 버튼·키보드와 1:1로 대응하며, 최상위에 물리 E-STOP이 있습니다.",["<b>물리 컨트롤덱 · E-STOP</b>","<b>무정전 전원 · 보조 디스플레이</b>","<b>콘솔 = 화면 = 키보드 1:1</b>"],"assets/dev_console.jpg","DEVICE · CONSOLE-1","COMMAND CONSOLE","CONTROL DECK")}{devrow(True,"HARDWARE — APPARATUS","현장 IoT · 배연/밸브","대원을 위험한 곳에 보내지 않고 지휘소에서 배연구·밸브를 원격 개폐합니다. 원격 가스 차단과 차단지점 AR 표시를 지원합니다.",["<b>원격 개폐 구동</b>","<b>개방도 0–100% 보고</b>","<b>원격 가스 차단</b>"],"assets/dev_vent.jpg","DEVICE · VENT-1","FIELD IoT","REMOTE ACTUATION")}</section>
+
 <section class="sec" style="padding-top:0;padding-bottom:0;border:0" id="twin">
   <div class="frow"><div class="ftext rv"><div class="kicker"><span class="ln"></span>B — 디지털 트윈</div><h3>실시간 3D 재구성</h3>
     <p>드론·고글 스캔(월드좌표 포인트)을 융합해 매끈한 표면 모형을 만듭니다. 시선 카빙으로 자유공간과 미탐사를 구분하고, 미탐사 영역은 트윈에 구멍으로 남아 탐사 목표가 됩니다.</p>
     <ul><li><b>점유격자 + 표면 메쉬</b> 동시 산출 (표준 3D 포맷)</li><li><b>열화상 채널</b> — 화점 발광 시각화</li><li><b>프런티어 환류</b> — 드론 자율 탐사 목표 공급</li></ul></div>
-    <figure class="fmedia rv"><span class="badge">TWIN · CUTAWAY</span><img src="assets/twin.jpg" alt="트윈"></figure></div>
+    {gate("DIGITAL TWIN","실시간 3D 재구성 화면","TWIN // CLASSIFIED","REDACTED — RECON SURFACE")}</div>
 
   <div class="frow rev" id="vlm"><div class="ftext rv"><div class="kicker"><span class="ln"></span>C — 자동 탐지(AI)</div><h3>사람보다 먼저 찾는다</h3>
     <p>비전 AI가 드론·고글 영상을 장면 단위로 이해해 위험을 분류합니다. 픽셀 룰이 아니라 모델이 판단하고, 모든 탐지에 '왜'를 동반합니다. 발견된 인원은 위급도·위험구역 근접·신뢰도로 구조 우선순위가 산정됩니다.</p>
     <ul><li><b>분류</b> — 사람·쓰러진사람·화점·연기·가스통·구조붕괴·백드래프트 외</li><li><b>rationale 필수</b> — 검증 가능한 판단</li><li><b>구조 우선순위</b> — '누구부터' 자동 산정</li></ul></div>
-    <figure class="fmedia rv"><span class="badge">VLM · DETECT</span><img src="assets/goggle.jpg" alt="탐지"></figure></div>
+    {gate("AI DETECTION","VLM 자동 탐지 화면","VLM // CLASSIFIED","REDACTED — DETECTION")}</div>
 
   <div class="frow" id="nav"><div class="ftext rv"><div class="kicker"><span class="ln"></span>D — AR 내비게이션</div><h3>매 순간 다시 그리는 길</h3>
     <p>트윈에서 만든 점유격자 위에서 최단경로를 탐색하고 가시선으로 단순화해, 대원 위치가 갱신될 때마다 경로를 재계산해 고글에 스트리밍합니다. 도달 시 자동 종료, 경로 부재 시 재배치 경고.</p>
     <ul><li><b>벽 회피·문 경유·우회</b></li><li><b>회전 힌트 + 남은 거리</b></li><li><b>위급 시 후퇴 경로 우선</b></li></ul></div>
-    <figure class="fmedia rv"><span class="badge">NAV · A*</span><img src="assets/cockpit_hero.jpg" alt="콕핏"></figure></div>
+    {gate("AR NAVIGATION","콕핏 · 고글 길안내 화면","NAV // CLASSIFIED","REDACTED — OPERATOR VIEW")}</div>
 </section>
 
 <section class="sec" id="safety">

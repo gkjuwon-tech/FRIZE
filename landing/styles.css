@@ -249,3 +249,32 @@ footer.ft{background:#070809;border-top:1px solid var(--line);padding-top:clamp(
   .ft-news{flex-direction:column;align-items:flex-start}
   .ft-news input{min-width:0;width:60vw}
 }
+
+/* ---------- gated / operator-access block (시스템 화면 비공개) ---------- */
+.gate{position:relative;border:1px dashed var(--line2);background:
+  repeating-linear-gradient(135deg,rgba(255,255,255,.012) 0 8px,transparent 8px 16px),
+  radial-gradient(circle at 30% 20%,rgba(232,100,60,.06),transparent 60%),var(--panel);
+  aspect-ratio:16/10;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.gate::after{content:"";position:absolute;inset:0;background-image:
+  linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px);background-size:100% 4px;pointer-events:none;opacity:.6}
+.gate .chip{position:absolute;top:12px;left:12px;font-family:var(--mono);font-size:10px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--ember);border:1px solid rgba(232,100,60,.4);padding:5px 9px;background:rgba(8,10,13,.5)}
+.gate .corner{position:absolute;width:16px;height:16px;border-color:var(--line2)}
+.gate .c1{top:10px;right:10px;border-top:1px solid;border-right:1px solid}
+.gate .c2{bottom:10px;left:10px;border-bottom:1px solid;border-left:1px solid}
+.gate .c3{bottom:10px;right:10px;border-bottom:1px solid;border-right:1px solid}
+.gate-body{text-align:center;padding:30px;position:relative;z-index:2;max-width:34ch}
+.gate .lk{width:46px;height:46px;margin:0 auto 18px;border:1.5px solid var(--tx2);transform:rotate(45deg);position:relative}
+.gate .lk::after{content:"";position:absolute;inset:9px;border:1px solid var(--ember)}
+.gate h4{font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--tx)}
+.gate p{margin-top:12px;color:var(--tx2);font-size:14px;line-height:1.6}
+.gate a.unlock{display:inline-flex;align-items:center;gap:8px;margin-top:20px;font-family:var(--mono);font-size:12px;
+  letter-spacing:.06em;color:#0a0a0a;background:var(--ember);padding:11px 18px;transition:.18s}
+.gate a.unlock:hover{background:var(--ember2)}
+.gate .redact{position:absolute;font-family:var(--mono);color:rgba(255,255,255,.05);font-size:11px;letter-spacing:.3em;
+  user-select:none;white-space:nowrap}
+.gate .r1{top:24%;left:-4%;transform:rotate(-4deg)}
+.gate .r2{bottom:22%;right:-6%;transform:rotate(3deg)}
+.gate-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;max-width:var(--maxw);margin:0 auto;padding-inline:var(--pad)}
+.gate-grid.three{grid-template-columns:repeat(3,1fr)}
+@media(max-width:880px){.gate-grid,.gate-grid.three{grid-template-columns:1fr}}
