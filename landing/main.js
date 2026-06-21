@@ -1,91 +1,61 @@
-/* ═══════════════════════════════════════
-   FRIZE Landing — Interactions
-   ═══════════════════════════════════════ */
-
+/* FRIZE Landing — Interactions */
 (function () {
   'use strict';
 
-  /* ── GNB: Scroll Detection ── */
   var gnb = document.getElementById('gnb');
-  var lastScroll = 0;
-
-  function onScroll() {
-    var y = window.scrollY;
-    if (y > 60) {
-      gnb.classList.add('gnb--scrolled');
-    } else {
-      gnb.classList.remove('gnb--scrolled');
-    }
-    lastScroll = y;
-  }
-
-  window.addEventListener('scroll', onScroll, { passive: true });
-  onScroll();
-
-  /* ── GNB: Mobile Menu ── */
   var burger = document.getElementById('gnbBurger');
   var nav = document.getElementById('gnbNav');
 
+  /* ── GNB scroll ── */
+  window.addEventListener('scroll', function () {
+    gnb.classList.toggle('gnb--solid', window.scrollY > 48);
+  }, { passive: true });
+
+  /* ── Mobile menu ── */
   if (burger && nav) {
     burger.addEventListener('click', function () {
       burger.classList.toggle('is-open');
       nav.classList.toggle('is-open');
     });
-
-    nav.querySelectorAll('.gnb__link').forEach(function (link) {
-      link.addEventListener('click', function () {
+    nav.querySelectorAll('a').forEach(function (a) {
+      a.addEventListener('click', function () {
         burger.classList.remove('is-open');
         nav.classList.remove('is-open');
       });
     });
   }
 
-  /* ── Scroll Reveal ── */
-  var reveals = document.querySelectorAll('[data-reveal]');
-
-  function checkReveal() {
-    var windowH = window.innerHeight;
-    reveals.forEach(function (el) {
-      var rect = el.getBoundingClientRect();
-      if (rect.top < windowH * 0.88) {
-        el.classList.add('is-visible');
+  /* ── Scroll reveal ── */
+  var els = document.querySelectorAll('[data-reveal]');
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (e.isIntersecting) {
+        e.target.classList.add('is-v');
+        io.unobserve(e.target);
       }
     });
-  }
+  }, { threshold: 0.12 });
 
-  window.addEventListener('scroll', checkReveal, { passive: true });
-  window.addEventListener('resize', checkReveal, { passive: true });
-  checkReveal();
+  els.forEach(function (el) { io.observe(el); });
 
-  /* ── Smooth Anchor Scroll ── */
-  document.querySelectorAll('a[href^="#"]').forEach(function (anchor) {
-    anchor.addEventListener('click', function (e) {
-      var target = document.querySelector(this.getAttribute('href'));
-      if (target) {
+  /* ── Smooth anchor ── */
+  document.querySelectorAll('a[href^="#"]').forEach(function (a) {
+    a.addEventListener('click', function (e) {
+      var t = document.querySelector(this.getAttribute('href'));
+      if (t) {
         e.preventDefault();
-        var offset = gnb ? gnb.offsetHeight : 72;
-        var top = target.getBoundingClientRect().top + window.scrollY - offset;
-        window.scrollTo({ top: top, behavior: 'smooth' });
+        window.scrollTo({ top: t.offsetTop - 64, behavior: 'smooth' });
       }
     });
   });
 
-  /* ── Demo Form (Stub) ── */
-  var form = document.getElementById('demoForm');
-  if (form) {
-    form.addEventListener('submit', function (e) {
-      e.preventDefault();
-      var btn = form.querySelector('button[type="submit"]');
-      var origText = btn.innerHTML;
-      btn.innerHTML = '전송 완료';
-      btn.disabled = true;
-      btn.style.opacity = '.6';
-      setTimeout(function () {
-        btn.innerHTML = origText;
-        btn.disabled = false;
-        btn.style.opacity = '1';
-        form.reset();
-      }, 3000);
-    });
-  }
+  /* ── Form stub ── */
+  var f = document.getElementById('demoForm');
+  if (f) f.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var b = f.querySelector('button');
+    b.textContent = '전송 완료';
+    b.disabled = true;
+    setTimeout(function () { b.textContent = '요청 보내기'; b.disabled = false; f.reset(); }, 2500);
+  });
 })();
