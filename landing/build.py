@@ -64,11 +64,6 @@ FOOTER="""<footer class="ft">
   <form data-demo><input type="email" placeholder="name@dept.go.kr" required><button type="submit">구독</button></form>
 </div>
 
-<div class="ft-badges">
-  <span>ISO 9001 (준비중)</span><span>정보보호 ISMS (준비중)</span><span>조달 등록 예정</span>
-  <span>NFPA 호환 설계</span><span>공공 SW 영향평가 대비</span><span>SBOM 제공</span><span data-clock>--:--:--Z</span>
-</div>
-
 <div class="ft-legal">
   <div class="links">
     <a href="#">개인정보처리방침</a><a href="#">이용약관</a><a href="#">영상정보 처리방침</a>
@@ -97,27 +92,20 @@ def devrow(rev,kick,h,p,lis,img,badge,cap1,cap2):
     return f'''<div class="frow{' rev' if rev else ''}">
     <div class="ftext rv"><div class="kicker"><span class="ln"></span>{kick}</div><h3>{h}</h3>
       <p>{p}</p><ul>{ul}</ul></div>
-    <figure class="fmedia rv"><span class="badge">{badge}</span><img src="{img}" alt="{h}"><figcaption><span>{cap1}</span><span>{cap2}</span></figcaption></figure></div>'''
+    <figure class="fmedia rv"><img src="{img}" alt="{h}"></figure></div>'''
 
 # ============================ INDEX ============================
 index_body = """
 <section class="hero">
-  <div class="ticks"><span class="tl"></span><span class="tr"></span><span class="bl"></span><span class="br"></span></div>
   <div class="hero-bg"><img src="assets/scene_fire.jpg" alt="화재 현장 — 소방 대응"></div>
   <div class="hero-in">
-    <div class="eyebrow rv"><span class="i">●</span>&nbsp;&nbsp;FIRE-RESPONSE INTEGRATED ZONE-CONTROL ENVIRONMENT</div>
     <h1 class="rv">연기 속에서,<br>지휘는 <em>멈추지 않는다.</em></h1>
     <p class="lead rv">FRIZE는 드론·스마트 고글·현장 IoT·지휘 콕핏을 하나의 실시간 망으로 묶는 소방 현장 지휘 운영체제입니다. 보이지 않는 건물 내부를 3D로 재구성하고, 생존자를 자동으로 탐지하며, 대원의 고글에 목표까지의 길을 그립니다.</p>
     <div class="hero-actions rv">
       <a class="btn btn-pri" href="demo.html">현장 데모 요청 <span class="ar">→</span></a>
       <a class="btn btn-ghost" href="system.html">시스템 살펴보기 <span class="ar">→</span></a>
     </div>
-    <div class="hero-meta rv">
-      <span>STATUS <b>OPERATIONAL</b></span><span>BUILD <b>v2026.06</b></span>
-      <span>SITE <b>CHEONGJU · KR</b></span><span data-clock>--:--:--Z</span>
-    </div>
   </div>
-  <div class="scrollcue">SCROLL</div>
 </section>
 
 <section class="sec">

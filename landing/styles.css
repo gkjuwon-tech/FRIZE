@@ -12,6 +12,11 @@
 }
 h1,h2,h3,h4{font-family:var(--display)}
 .hero h1,.sec-head h2,.ftext h3,.band h2,.cta h2,.statement,.prose .lead-xl,.prose h3,.stat .v,.brand{font-family:var(--display)}
+.hero h1{font-weight:800;letter-spacing:-.035em}
+.sec-head h2,.band h2,.cta h2,.ftext h3,.prose h3{font-weight:750}
+.statement,.prose .lead-xl{font-weight:600}
+body{font-weight:420}
+.pillar h3,.card h3,.tl-item h4{font-weight:700}
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
 body{
@@ -26,11 +31,7 @@ body::before{
     radial-gradient(circle at 50% -10%, rgba(90,120,150,.10), transparent 55%),
     linear-gradient(180deg,#0b0e13,#080a0e 60%);
 }
-body::after{
-  content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.35;
-  background-image:radial-gradient(rgba(255,255,255,.05) 1px,transparent 1px);
-  background-size:3px 3px;mix-blend-mode:overlay;
-}
+/* (dot grid removed for cleaner look) */
 a{color:inherit;text-decoration:none}
 img{display:block;max-width:100%}
 ::selection{background:var(--ember);color:#0a0a0a}
@@ -96,7 +97,8 @@ section{position:relative}
 .sec-head h2{font-size:clamp(26px,4vw,46px);line-height:1.05;letter-spacing:-.025em;font-weight:680;max-width:20ch}
 .sec-head p{color:var(--tx2);max-width:62ch;font-size:clamp(15px,1.4vw,18px)}
 .kicker{display:flex;align-items:center;gap:14px;font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--tx3)}
-.kicker .ln{flex:0 0 40px;height:1px;background:var(--ember)}
+.kicker .ln{display:none}
+.kicker{color:var(--tx2);font-size:12px;letter-spacing:.16em}
 
 /* statement big text */
 .statement{font-size:clamp(24px,3.4vw,40px);line-height:1.28;letter-spacing:-.02em;font-weight:500;max-width:24ch}
@@ -127,16 +129,13 @@ section{position:relative}
 .ftext li b{color:var(--tx)}
 .fmedia{position:relative;border:1px solid var(--line);background:var(--panel);overflow:hidden}
 .fmedia img{width:100%;height:100%;object-fit:cover;aspect-ratio:16/10}
-.fmedia figcaption{position:absolute;left:0;bottom:0;right:0;display:flex;justify-content:space-between;
-  font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;color:var(--tx2);padding:10px 12px;
-  background:linear-gradient(0deg,rgba(8,10,13,.92),transparent)}
-.fmedia .badge{position:absolute;top:10px;left:10px;font-family:var(--mono);font-size:10px;letter-spacing:.14em;
-  text-transform:uppercase;color:var(--tx);background:rgba(8,10,13,.6);border:1px solid var(--line2);padding:4px 8px}
+.fmedia figcaption{display:none}
+.fmedia .badge{display:none}
 
 /* full-bleed band */
 .band{position:relative;min-height:clamp(380px,60vh,640px);display:flex;align-items:center;border-bottom:1px solid var(--line);overflow:hidden}
 .band img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.7}
-.band::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(8,10,13,.92) 0%,rgba(8,10,13,.55) 55%,rgba(8,10,13,.2) 100%)}
+.band::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(8,10,13,.86) 0%,rgba(8,10,13,.4) 60%,rgba(8,10,13,.1) 100%)}
 .band .band-in{position:relative;z-index:2;max-width:var(--maxw);margin:0 auto;padding-inline:var(--pad);width:100%}
 .band h2{font-size:clamp(26px,4.4vw,52px);letter-spacing:-.025em;line-height:1.04;max-width:18ch}
 .band p{margin-top:20px;max-width:50ch;color:var(--tx2);font-size:16px}
