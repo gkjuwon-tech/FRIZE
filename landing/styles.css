@@ -1,16 +1,17 @@
 /* FRIZE — Command OS · site styles
-   defense-tech / editorial. dark, restrained, ember accent. */
-@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css");
-
+   clean defense-tech. dark, generous whitespace, ember accent. */
 :root{
   --bg:#090b0f; --bg2:#0d1015; --panel:#11141a; --panel2:#161a21;
   --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.16);
-  --tx:#e9edf2; --tx2:#9aa2ac; --tx3:#5c656f;
+  --tx:#eef1f5; --tx2:#9aa2ac; --tx3:#5c656f;
   --ember:#e8643c; --ember2:#ff8254; --ok:#5fb27a; --warn:#d6a23a; --crit:#d8463a; --steel:#6f93b8;
-  --sans:"Pretendard","Pretendard Variable",-apple-system,"Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif;
-  --mono:"SFMono-Regular","SF Mono","Roboto Mono","JetBrains Mono",ui-monospace,Menlo,monospace;
+  --sans:"Pretendard Variable","Pretendard","Apple SD Gothic Neo","Noto Sans KR",system-ui,-apple-system,sans-serif;
+  --display:"Outfit","Pretendard Variable","Pretendard","Apple SD Gothic Neo",system-ui,sans-serif;
+  --mono:"Space Grotesk","SFMono-Regular","SF Mono","Roboto Mono",ui-monospace,Menlo,monospace;
   --maxw:1240px; --pad:clamp(20px,5vw,64px);
 }
+h1,h2,h3,h4{font-family:var(--display)}
+.hero h1,.sec-head h2,.ftext h3,.band h2,.cta h2,.statement,.prose .lead-xl,.prose h3,.stat .v,.brand{font-family:var(--display)}
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
 body{

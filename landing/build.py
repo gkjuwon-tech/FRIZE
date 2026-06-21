@@ -14,6 +14,10 @@ def head(title,desc):
 <meta property="og:title" content="{title} — FRIZE Command OS">
 <meta property="og:description" content="{desc}">
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="styles.css">
 </head><body>"""
 
@@ -73,7 +77,7 @@ FOOTER="""<footer class="ft">
   <div class="copy">© 2026 FRIZE INC. ALL RIGHTS RESERVED · 사업자등록 000-00-00000</div>
 </div>
 <div class="ft-credit">
-사진: 「High-Rise Fire Test / Wind-Driven Fires」(U.S. Gov, Public Domain) · 「강원도 소방공무원」「안산 소방차량」(Wikimedia Commons, CC BY-SA). 하드웨어 비주얼은 FRIZE 자체 3D 렌더(내부 산출물)입니다. 실시간 시스템 화면(디지털 트윈 · 지휘 콕핏 · 고글 AR)은 운용 보안상 일반 공개하지 않으며, 현장 데모 요청 또는 도입 기관에 한해 제공됩니다. 본 페이지의 수치·임계값은 현재 빌드의 검증값으로 사양은 고지 없이 변경될 수 있습니다. 본 사이트는 데모용 정적 페이지로 일부 링크는 비활성입니다.
+사진: 「High-Rise Fire Test / Wind-Driven Fires」(U.S. Gov, Public Domain) · 「강원도 소방공무원」「안산 소방차량」(Wikimedia Commons, CC BY-SA). 하드웨어 비주얼은 FRIZE 자체 3D 렌더(내부 산출물)입니다. 본 페이지의 수치·임계값은 현재 빌드의 검증값으로 사양은 고지 없이 변경될 수 있습니다. 본 사이트는 데모용 정적 페이지로 일부 링크는 비활성입니다.
 </div>
 </footer>
 <script src="app.js"></script></body></html>"""
@@ -141,15 +145,13 @@ index_body = """
       "assets/dev_scout.jpg","DEVICE · SCOUT-1","RECON DRONE","LiDAR · AUTONOMY") + """
 </section>
 
-<section class="sec" id="operator">
-  <div class="wrap">
-    <div class="kicker rv" style="margin-bottom:18px"><span class="ln"></span>OPERATOR ACCESS · RESTRICTED</div>
-    <h2 class="sec-head" style="padding:0">실시간 트윈·콕핏·고글 화면은<br>운영자에게만 공개됩니다</h2>
-    <p class="muted rv" style="max-width:64ch;margin:16px 0 4px">지휘 콕핏의 디지털 트윈, AI 탐지, AR 길안내 화면은 운용 보안상 일반 공개하지 않습니다. 현장 데모 요청 또는 도입 기관에 한해 제공됩니다.</p>
-  </div>
-  <div class="gate-grid" style="margin-top:clamp(28px,4vh,44px)">
-    """ + gate("DIGITAL TWIN","실시간 3D 재구성 화면","TWIN // CLASSIFIED","REDACTED — RECON SURFACE") + """
-    """ + gate("COMMAND COCKPIT","콕핏 · 고글 AR 화면","COCKPIT // CLASSIFIED","REDACTED — OPERATOR VIEW") + """
+<section class="band" style="min-height:clamp(360px,56vh,600px)">
+  <img src="assets/scene_highrise.jpg" alt="고층 화재 대응">
+  <div class="band-in rv">
+    <div class="eyebrow" style="margin-bottom:16px"><span class="i">●</span>&nbsp;&nbsp;SEE WHAT WAS UNSEEN</div>
+    <h2>보이지 않던 것을<br>실시간으로 본다</h2>
+    <p>드론이 만든 디지털 트윈, AI가 찾은 생존자, 고글에 그려지는 길. 지휘관은 한 화면에서 현장 전체를 읽습니다.</p>
+    <div class="hero-actions" style="margin-top:26px"><a class="btn btn-ghost" href="system.html">시스템 자세히 <span class="ar">→</span></a></div>
   </div>
 </section>
 
@@ -264,17 +266,17 @@ system_body = f"""
   <div class="frow"><div class="ftext rv"><div class="kicker"><span class="ln"></span>B — 디지털 트윈</div><h3>실시간 3D 재구성</h3>
     <p>드론·고글 스캔(월드좌표 포인트)을 융합해 매끈한 표면 모형을 만듭니다. 시선 카빙으로 자유공간과 미탐사를 구분하고, 미탐사 영역은 트윈에 구멍으로 남아 탐사 목표가 됩니다.</p>
     <ul><li><b>점유격자 + 표면 메쉬</b> 동시 산출 (표준 3D 포맷)</li><li><b>열화상 채널</b> — 화점 발광 시각화</li><li><b>프런티어 환류</b> — 드론 자율 탐사 목표 공급</li></ul></div>
-    {gate("DIGITAL TWIN","실시간 3D 재구성 화면","TWIN // CLASSIFIED","REDACTED — RECON SURFACE")}</div>
+    <figure class="fmedia rv"><span class="badge">RECON</span><img src="assets/scene_highrise.jpg" alt="건물 내부 재구성"><figcaption><span>DIGITAL TWIN</span><span>SURFACE FUSION</span></figcaption></figure></div>
 
   <div class="frow rev" id="vlm"><div class="ftext rv"><div class="kicker"><span class="ln"></span>C — 자동 탐지(AI)</div><h3>사람보다 먼저 찾는다</h3>
     <p>비전 AI가 드론·고글 영상을 장면 단위로 이해해 위험을 분류합니다. 픽셀 룰이 아니라 모델이 판단하고, 모든 탐지에 '왜'를 동반합니다. 발견된 인원은 위급도·위험구역 근접·신뢰도로 구조 우선순위가 산정됩니다.</p>
     <ul><li><b>분류</b> — 사람·쓰러진사람·화점·연기·가스통·구조붕괴·백드래프트 외</li><li><b>rationale 필수</b> — 검증 가능한 판단</li><li><b>구조 우선순위</b> — '누구부터' 자동 산정</li></ul></div>
-    {gate("AI DETECTION","VLM 자동 탐지 화면","VLM // CLASSIFIED","REDACTED — DETECTION")}</div>
+    <figure class="fmedia rv"><span class="badge">DETECT</span><img src="assets/kr_firefighter.jpg" alt="자동 탐지"><figcaption><span>AI DETECTION</span><span>SURVIVOR / HAZARD</span></figcaption></figure></div>
 
   <div class="frow" id="nav"><div class="ftext rv"><div class="kicker"><span class="ln"></span>D — AR 내비게이션</div><h3>매 순간 다시 그리는 길</h3>
     <p>트윈에서 만든 점유격자 위에서 최단경로를 탐색하고 가시선으로 단순화해, 대원 위치가 갱신될 때마다 경로를 재계산해 고글에 스트리밍합니다. 도달 시 자동 종료, 경로 부재 시 재배치 경고.</p>
     <ul><li><b>벽 회피·문 경유·우회</b></li><li><b>회전 힌트 + 남은 거리</b></li><li><b>위급 시 후퇴 경로 우선</b></li></ul></div>
-    {gate("AR NAVIGATION","콕핏 · 고글 길안내 화면","NAV // CLASSIFIED","REDACTED — OPERATOR VIEW")}</div>
+    <figure class="fmedia rv"><span class="badge">NAV</span><img src="assets/scene_fire.jpg" alt="고글 길안내"><figcaption><span>AR NAVIGATION</span><span>REAL-TIME REROUTE</span></figcaption></figure></div>
 </section>
 
 <section class="sec" id="safety">
