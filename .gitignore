@@ -23,3 +23,7 @@ __pycache__/
 .idea/
 .DS_Store
 compile_commands.json
+
+# 크몽 스크레이프 도구의 의존성(런타임만, 재현은 npm i로)
+_ref/kmong_scrape/node_modules/
+_ref/kmong_scrape/package-lock.json
