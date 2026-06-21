@@ -61,8 +61,12 @@ int main() {
         cmdq.push_back(e.as<Command>());
     });
 
-    // 맵핑 서비스의 프런티어 수신(미탐사 경계) → 자율 탐사 목표
-    std::mutex fmtx; std::vector<Vec3> frontiers_w;
+    // 맵핑 서비스의 프런티어(미탐사 경계) + 재정찰 목표(오래됐고 뜨거운 곳) 수신.
+    //  • 프런티어 → '미탐사' 채우기 (지금까지의 유일한 행동)
+    //  • 재정찰   → '이미 본' 화재 구역으로 되돌아가 확산 진행을 재확인 (신규)
+    std::mutex fmtx;
+    std::vector<Vec3> frontiers_w;
+    std::vector<std::pair<Vec3,double>> revisit_w;   // (위치, 우선순위)
     bus.subscribe(Topic::map(), [&](const std::string&, const Envelope& e){
         auto mp = e.as<MapPatch>();
         std::lock_guard<std::mutex> lk(fmtx);
@@ -71,6 +75,9 @@ int main() {
             frontiers_w.push_back(Vec3{(f[0]+0.5)*mp.voxel_size_m + mp.origin.x,
                                        (f[1]+0.5)*mp.voxel_size_m + mp.origin.y,
                                        (f[2]+0.5)*mp.voxel_size_m + mp.origin.z});
+        // 재정찰 목표는 월드 m 좌표로 직접 옴([x,y,z,priority], 우선순위 내림차순)
+        revisit_w.clear();
+        for (auto& r : mp.revisit) revisit_w.push_back({Vec3{r[0], r[1], r[2]}, r[3]});
     });
     // 콕핏 페어링: 정찰 드론 능력 광고
     bus.enable_pairing(device_id, DeviceType::Scout, "0.1.0",
@@ -80,6 +87,11 @@ int main() {
     // 프런티어 탐사 상태
     bool exploring=false; Vec3 cur_target{}; bool have_target=false;
     bool investigating=false;   // 명시적 태스킹("저기 먼저 조사해") 진행 중 ― 프런티어 가로채기
+    // 재정찰 주기: N개 프런티어마다 1번은 '이미 본' 화재 구역으로 되돌아가 확산 재확인.
+    //  미탐사만 좇으면 불이 번지는 걸 놓친다 → 주기적으로 뒤를 돌아본다.
+    const int  revisit_every = std::max(1, std::atoi(envs("FRIZE_REVISIT_EVERY","3").c_str()));
+    int  frontier_streak = 0;     // 마지막 재정찰 이후 채운 프런티어 수
+    bool last_was_revisit = false;
     int anchors_left = std::atoi(envs("FRIZE_ANCHOR_MAG","3").c_str());  // 디스펜서 매거진
     Vec3 last_pos = home; int anchor_seq=0;
 
@@ -171,36 +183,41 @@ int main() {
         auto st = flight->poll(dt);
         flight_armed_ = st.armed; last_pos = st.position;
 
-        // 자율 프런티어 탐사: 목표 도달 or 미설정이면 가장 가까운 프런티어 선택(빈곳 채움)
+        // 자율 탐사: 목표 도달 or 미설정이면 다음 목표 선택.
+        //  핵심 변경 ― 미탐사 프런티어만 좇지 않는다. revisit_every 회마다 한 번은
+        //  '이미 본' 화재 구역(재정찰 목표)으로 되돌아가 불이 지금 어떻게 번지는지
+        //  재확인한다. 그래야 트윈의 화재 상태가 과거가 아니라 '현재'가 된다.
         if (exploring) {
             if (!have_target || geo::horizontal_distance(st.position, cur_target) < 2.5) {
                 if (investigating) investigating = false;   // 지정 지점 조사 완료 → 자율탐사 재개
+                if (have_target) { if (last_was_revisit) frontier_streak = 0; else ++frontier_streak; }
                 std::lock_guard<std::mutex> lk(fmtx);
-                double best = 1e18; bool found=false; Vec3 bp{};
-                for (auto& f : frontiers_w) {
-                    double d = geo::distance(st.position, f);
-                    if (d > 1.5 && d < best) { best=d; bp=f; found=true; }
+
+                bool found=false; Vec3 bp{}; bool picked_revisit=false;
+                // 재정찰 차례 + 재정찰 목표가 있으면, 우선순위 최상위로 되돌아간다.
+                if (frontier_streak >= revisit_every && !revisit_w.empty()) {
+                    double bestp = -1e18;
+                    for (auto& rv : revisit_w) {
+                        double d = geo::distance(st.position, rv.first);
+                        if (d < 1.0) continue;                 // 바로 코앞은 스킵
+                        if (rv.second > bestp) { bestp = rv.second; bp = rv.first; found = true; }
+                    }
+                    if (found) picked_revisit = true;
+                }
+                // 평소(또는 재정찰 목표 없음)엔 최근접 미탐사 프런티어.
+                if (!found) {
+                    double best = 1e18;
+                    for (auto& f : frontiers_w) {
+                        double d = geo::distance(st.position, f);
+                        if (d > 1.5 && d < best) { best=d; bp=f; found=true; }   // 최근접 프런티어(그리디)
+                    }
                 }
                 if (found) {
                     cur_target = bp; cur_target.z = std::max(bp.z, 3.0) + 2.0;   // 안전 고도
-                    have_target = true;
-                    flight->goto_local(cur_target, geo::bearing_deg(st.position, cur_target)*geo::DEG2RAD);
-                }
-            }
-        }
-
-        // 자율 프런티어 탐사: 목표 도달 or 미설정이면 가장 가까운 프런티어 선택
-        if (exploring) {
-            if (!have_target || geo::horizontal_distance(st.position, cur_target) < 2.5) {
-                std::lock_guard<std::mutex> lk(fmtx);
-                double best = 1e18; bool found=false; Vec3 bp{};
-                for (auto& f : frontiers_w) {
-                    double d = geo::distance(st.position, f);
-                    if (d > 1.5 && d < best) { best=d; bp=f; found=true; }   // 최근접 프런티어(그리디)
-                }
-                if (found) {
-                    cur_target = bp; cur_target.z = std::max(bp.z, 3.0) + 2.0;  // 안전 고도
-                    have_target = true;
+                    have_target = true; last_was_revisit = picked_revisit;
+                    if (picked_revisit) { frontier_streak = 0;
+                        LOG->info("재정찰: 화재 구역 ({:.1f},{:.1f},{:.1f})로 복귀 → 확산 재확인",
+                                  bp.x, bp.y, bp.z); }
                     flight->goto_local(cur_target, geo::bearing_deg(st.position, cur_target)*geo::DEG2RAD);
                 }
             }

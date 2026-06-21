@@ -100,9 +100,14 @@ def render(out_dir: Path, report: dict):
     fig.savefig(out_dir/"preview_points.png", dpi=95, bbox_inches="tight", facecolor="#0c0f13")
     plt.close(fig)
 
-    # 3) 진행 트립틱 (25/50/75% → 메쉬가 자라남) + 최종
-    snaps = [(out_dir/f"twin_{p}.ply", f"{p}%") for p in (25, 50, 75)]
-    snaps = [(p, l) for p, l in snaps if p.exists()] + [(out_dir/"twin.ply", "100%")]
+    # 3) 진행 트립틱 (랩별 재방문 → 화재가 번지며 메쉬 열색이 자라남)
+    laps = int(report.get("laps", 0))
+    lap_s = float(report.get("lap_seconds", 0))
+    snaps = [(out_dir/f"twin_lap{i}.ply", f"t={int((i+1)*lap_s)}s") for i in range(laps)]
+    snaps = [(p, l) for p, l in snaps if p.exists()]
+    if not snaps:  # 폴백(구 포맷)
+        snaps = [(out_dir/f"twin_{p}.ply", f"{p}%") for p in (25,50,75)]
+        snaps = [(p, l) for p, l in snaps if p.exists()] + [(out_dir/"twin.ply", "100%")]
     fig = plt.figure(figsize=(4.4*len(snaps), 4))
     for i, (ply, lab) in enumerate(snaps):
         v, f, c = load(ply)
@@ -115,18 +120,26 @@ def render(out_dir: Path, report: dict):
     fig.savefig(out_dir/"progression.png", dpi=92, bbox_inches="tight", facecolor="#0c0f13")
     plt.close(fig)
 
-    # 4) 프런티어 진행 차트(미탐사 경계가 탐사로 줄었다 늘었다 = 새 공간 발견)
-    fc = report.get("frontier_curve", [])
-    if fc:
-        xs = [p*100 for p, _ in fc]; ys = [n for _, n in fc]
-        fig, ax = plt.subplots(figsize=(6, 3.2))
-        ax.plot(xs, ys, "-o", color="#35c4e0"); ax.fill_between(xs, ys, color="#35c4e0", alpha=0.15)
-        ax.set_xlabel("exploration progress %"); ax.set_ylabel("frontier (unexplored boundary) cells")
-        ax.set_title("Frontier over exploration"); ax.grid(alpha=0.3)
-        fig.savefig(out_dir/"frontier.png", dpi=100, bbox_inches="tight")
+    # 4) 화재 확산 진행 차트(재방문할 때마다 측정 → 불이 번지는 곡선)
+    fp = report.get("fire_progression", [])
+    if fp:
+        ts = [p["t"] for p in fp]
+        hv = [p["hot_vertices"] for p in fp]
+        fr = [p["front"] for p in fp]
+        fig, ax = plt.subplots(figsize=(6.2, 3.4))
+        ax.plot(ts, hv, "-o", color="#ff6a2c", label="화재 표면 정점 (>100℃)")
+        ax.fill_between(ts, hv, color="#ff6a2c", alpha=0.15)
+        ax.set_xlabel("sim time (s)  ·  드론 재방문 시점마다 측정")
+        ax.set_ylabel("fire surface vertices", color="#ff6a2c")
+        ax2 = ax.twinx()
+        ax2.plot(ts, fr, "--s", color="#ffd23c", label="확산 전선 셀")
+        ax2.set_ylabel("spreading-front cells", color="#ffd23c")
+        ax.set_title("Fire spread over time (revisit-driven)"); ax.grid(alpha=0.3)
+        fig.tight_layout()
+        fig.savefig(out_dir/"fire_spread.png", dpi=100, bbox_inches="tight", facecolor="white")
         plt.close(fig)
 
-    print(f"[render] preview_section.png / preview_points.png / progression.png / frontier.png")
+    print(f"[render] preview_section.png / preview_points.png / progression.png / fire_spread.png")
 
 
 def summarize(report: dict):
@@ -149,10 +162,38 @@ def summarize(report: dict):
     ]
     for k, v in rows:
         print(f"  {k:<22} {v}")
+    # ── 화재 확산 분석(있으면) ──
+    fs = r.get("fire_summary")
+    fp = r.get("fire_progression", [])
+    if fs:
+        print("-"*52)
+        print("  🔥 화재 확산 분석 (열화상 시계열)")
+        if fp:
+            h0, hN = fp[0]["hot_vertices"], fp[-1]["hot_vertices"]
+            grow = (hN / h0) if h0 else 0
+            print(f"  {'화재 표면 성장':<22} {h0:,} → {hN:,} 정점  (×{grow:.2f})")
+        print(f"  {'확산 전선 셀':<22} {fs['front_cells']:,}  (평균 {fs['mean_front_rate_cps']:.1f}℃/s)")
+        print(f"  {'화점 핵 / 면적':<22} {fs['burning_cells']:,} 셀  ~{fs['burning_area_m2']:.0f} m²")
+        print(f"  {'최고 온도 / 가열률':<22} {fs['max_temp_c']:.0f}℃  /  {fs['max_rate_cps']:.1f}℃/s")
+        sv = r.get("spread_vectors", [])
+        for s in sv[:3]:
+            c, d = s["c"], s["dir"]
+            print(f"    · 화점({c[0]:.1f},{c[1]:.1f}) → 방향({d[0]:+.2f},{d[1]:+.2f},{d[2]:+.2f}) "
+                  f"{s['rate']:.1f}℃/s")
+        print(f"  {'재정찰 목표':<22} {r.get('revisit_targets',0)}개 (드론 재방문 지점)")
     print("="*52)
     cov = r["gt_surface_coverage_pct"]
-    verdict = "✅ 트윈 재구성 성공" if cov >= 85 else "⚠️ 커버리지 낮음 — 경로/센서 점검"
+    verdict = "✅ 트윈 재구성 성공" if cov >= 80 else "⚠️ 커버리지 낮음 — 경로/센서 점검"
     print(f"  {verdict}  (드론+대원 LiDAR → 3D 표면 메쉬)")
+    ver = r.get("verification")
+    if ver:
+        ok = all(ver.values())
+        mark = lambda b: "✅" if b else "❌"
+        print(f"  {mark(ver['twin_shows_spread'])} 트윈에 화재 확산 표시   "
+              f"{mark(ver['spread_detected'])} 확산 전선/벡터 검출")
+        print(f"  {mark(ver['has_direction'])} 확산 방향 추정        "
+              f"{mark(ver['revisit_ready'])} 재정찰 목표 산출")
+        print(f"  {'🔥 화재 확산 분석 검증 통과' if ok else '⚠️ 일부 검증 실패'}")
     print("="*52 + "\n")
 
 

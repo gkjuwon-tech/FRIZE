@@ -17,6 +17,47 @@ using frize::recon::Vec3f;
 
 struct Box { Vec3f lo, hi; const char* kind; float temp_c; };
 
+// ── 시간 진행형 화재장(시뮬 전용) ────────────────────────────────────────────
+//   화점에서 출발한 '확산 전선'이 시간이 지나며 바깥으로 번진다. 한 표면 점의
+//   온도는 전선이 다가오며 상승 → 같은 셀을 다시 스캔하면 dT/dt>0 → 확산 분석기가
+//   '여기 지금 번지는 중'을 포착. 비등방(복도 +x·2차화점 쪽으로 더 빨리)이라
+//   확산 '방향벡터'도 검출 가능. 이게 트윈에 불이 실제로 번지게 만드는 엔진.
+struct FireSim {
+    std::vector<Vec3f> origins;     // 발화점들
+    float core_c   = 640.f;         // 핵심 온도(°C)
+    float r0       = 0.6f;          // 초기 화재 반경(m)
+    float speed    = 0.055f;        // 확산 속도(m/s, 전선 전진) ― 현실적 실내 확산
+    float ax_east  = 1.9f;          // +x(복도 동쪽)로 더 빨리 번짐(유효거리 축소)
+    float ax_west  = 0.55f;         // -x(서벽)로는 더디게
+    float falloff  = 0.16f;         // 핵심부 거리 감쇠(1/m)
+
+    // 시각 t(초)에서 점 p의 온도(미가열이면 NaN).
+    float temp_at(const Vec3f& p, float t) const {
+        float best = std::numeric_limits<float>::quiet_NaN();
+        float R = r0 + speed * t;                       // 현재 전선 반경
+        for (const auto& o : origins) {
+            float dx = p.x - o.x, dy = p.y - o.y, dz = p.z - o.z;
+            float axw = (dx >= 0 ? ax_east : ax_west);  // 비등방: 방향별 확산속
+            float ex = dx / axw;
+            float d = std::sqrt(ex*ex + dy*dy + (dz*0.7f)*(dz*0.7f));
+            float lead = R - d;                         // >0: 전선이 이미 지나감
+            float temp;
+            if (lead > 1.5f) {
+                temp = 40.f + (core_c - 40.f) * std::exp(-falloff * d);   // 핵심부
+            } else if (lead > -1.2f) {
+                float u = (lead + 1.2f) / 2.7f;          // 전선 램프 [-1.2,1.5]→[0,1]
+                u = std::max(0.f, std::min(1.f, u));
+                float hot = 40.f + (core_c - 40.f) * std::exp(-falloff * d);
+                temp = 30.f + (hot - 30.f) * u;          // 전선 통과하며 가열
+            } else {
+                continue;                                // 아직 안 닿음
+            }
+            if (std::isnan(best) || temp > best) best = temp;
+        }
+        return best;
+    }
+};
+
 class Building {
 public:
     // ── 영상(Exeter FD 내부수색) 역설계: 단층 복도+병실형 institutional 건물 ──

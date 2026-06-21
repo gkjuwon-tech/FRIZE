@@ -21,6 +21,7 @@
 #include "frize/recon/tsdf.hpp"
 #include "frize/recon/marching_cubes.hpp"
 #include "frize/recon/mesh.hpp"
+#include "frize/recon/fire.hpp"   // 화재 확산 분석(열화상 시계열)
 
 using namespace frize;
 static auto LOG = make_logger("mapping");
@@ -47,6 +48,14 @@ int main() {
     mapping::VoxelMap map(vs);
     std::mutex mtx;
 
+    // ── 화재 확산 분석기: 같은 셀의 온도를 시간축으로 추적해 dT/dt(가열률)·확산
+    //    전선·확산 방향·재정찰 목표를 산출 → MapPatch에 실어 콕핏 트윈/드론에 공급.
+    //    (화점 '검출'을 넘어 '어디로 번지는지'를 본다.)
+    const double fire_vs = std::atof(envs("FRIZE_FIRE_VOXEL","0.40").c_str());
+    const double fire_stale = std::atof(envs("FRIZE_FIRE_REVISIT_SEC","8.0").c_str());
+    recon::FireAnalyzer fire(fire_vs);
+    LOG->info("화재 확산 분석 활성: voxel={}m, 재정찰 staleness={}s", fire_vs, fire_stale);
+
     // ── TSDF 표면 트윈(선택) ──────────────────────────────────────────────────
     // FRIZE_TWIN_MESH=1 이면 점유격자와 병행해 TSDF를 누적하고, 주기적으로
     // 마칭큐브로 twin.gltf를 써서 콕핏이 매끈한 표면 메쉬를 로드하게 한다.
@@ -71,6 +80,8 @@ int main() {
             tsdf.integrate_ray({(float)s.x,(float)s.y,(float)s.z},
                                {(float)hit.x,(float)hit.y,(float)hit.z},
                                temp ? *temp : std::numeric_limits<float>::quiet_NaN());
+        // 열화상 관측을 시계열 화재 분석기에 융합(온도 있을 때만) → 확산 추적
+        if (temp) fire.observe(hit.x, hit.y, hit.z, *temp, frize::now_s());
     };
 
     MessageBus bus("frize-mapping", host, port);
@@ -122,11 +133,28 @@ int main() {
         if (std::chrono::duration<double>(clk::now()-t_pub).count() >= 1.0) {
             t_pub = clk::now();
             MapPatch patch;
-            { std::lock_guard<std::mutex> lk(mtx); patch = map.take_patch(); }
-            if (!patch.occupied.empty()) {
+            recon::FireAnalyzer::Summary fsum;
+            {
+                std::lock_guard<std::mutex> lk(mtx);
+                patch = map.take_patch();
+                // 화재 확산 분석을 패치에 부착(월드 m 좌표) → 콕핏 트윈 + 드론 재정찰
+                double now = frize::now_s();
+                fire.decay_unobserved(now);
+                for (auto& f : fire.front())
+                    patch.fire_front.push_back({f.x, f.y, f.z, f.temp, f.rate});
+                for (auto& s : fire.spread())
+                    patch.fire_spread.push_back({s.cx,s.cy,s.cz, s.dx,s.dy,s.dz, s.rate, s.peak});
+                for (auto& r : fire.revisit_targets(now, fire_stale))
+                    patch.revisit.push_back({r.x, r.y, r.z, r.priority});
+                fsum = fire.summary();
+            }
+            // 점유 복셀 또는 화재 정보가 있으면 송출
+            if (!patch.occupied.empty() || !patch.fire_front.empty() || !patch.fire_spread.empty()) {
                 patch.dims = {0,0,0};
                 bus.publish(Topic::map(), Envelope::wrap(MessageType::MapPatch, "mapping", patch), 0);
-                LOG->info("MapPatch 송출: {} 복셀 (총 {})", patch.occupied.size(), map.size());
+                LOG->info("MapPatch 송출: {} 복셀 | 확산전선 {} 화점 {} 재정찰 {} | 최대 {:.0f}°C {:.1f}°C/s",
+                          patch.occupied.size(), patch.fire_front.size(), patch.fire_spread.size(),
+                          patch.revisit.size(), fsum.max_temp, fsum.max_rate);
             }
         }
         // 주기적 TSDF → 표면 메쉬(glTF) 갱신 → 콕핏 트윈이 매끈한 표면을 로드
