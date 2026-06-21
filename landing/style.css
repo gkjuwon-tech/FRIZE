@@ -78,33 +78,52 @@ address{font-style:normal}
 .gnb__burger.is-open span:first-child{top:50%;transform:rotate(45deg)}
 .gnb__burger.is-open span:last-child{bottom:50%;transform:rotate(-45deg)}
 
-/* ═══ HERO ═══ */
+/* ═══ HERO  (YP Alliance / FinsightLabs pattern) ═══ */
 .hero{
-  position:relative;height:100vh;min-height:700px;
-  display:flex;align-items:flex-end;overflow:hidden}
-.hero__img{
-  position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
-  filter:brightness(.55);will-change:transform}
-.hero__inner{
-  position:relative;z-index:2;
-  padding:0 var(--gutter) clamp(64px,10vh,120px);max-width:720px}
+  position:relative;display:flex;flex-direction:column;
+  min-height:100vh;overflow:hidden}
+
+/* ── Text zone: pure black, text is the star ── */
+.hero__text{
+  flex:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  text-align:center;
+  padding:clamp(120px,14vh,180px) var(--gutter) clamp(48px,6vh,80px)}
 .hero__kicker{
-  font:700 11px/1 var(--mono);letter-spacing:.22em;
-  color:var(--c-accent);margin-bottom:24px}
+  font:700 11px/1 var(--mono);letter-spacing:.28em;
+  color:var(--c-accent);margin-bottom:clamp(20px,3vh,36px)}
 .hero__h1{
-  font-size:clamp(36px,6vw,68px);font-weight:800;line-height:1.1;
-  color:#fff;margin-bottom:24px}
-.hero__rule{width:64px;height:2px;background:var(--c-accent);margin-bottom:24px}
+  font-family:'Noto Serif KR',serif;
+  font-size:clamp(38px,7vw,88px);font-weight:200;line-height:1.18;
+  color:#fff;margin-bottom:clamp(20px,3vh,32px);
+  letter-spacing:-.02em}
+.hero__rule{
+  width:clamp(60px,8vw,120px);height:1px;
+  background:linear-gradient(90deg,transparent,var(--c-accent),transparent);
+  margin:0 auto clamp(20px,3vh,32px)}
 .hero__sub{
-  font-size:clamp(14px,1.4vw,17px);line-height:1.8;
-  color:rgba(255,255,255,.6);margin-bottom:36px}
-.hero__ctas{display:flex;gap:14px;flex-wrap:wrap}
+  font-size:clamp(14px,1.2vw,17px);line-height:1.85;
+  color:rgba(255,255,255,.45);margin-bottom:clamp(28px,4vh,44px);
+  max-width:480px}
+.hero__ctas{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+
+/* ── Photo zone: inset image (YP Alliance style) ── */
+.hero__visual{
+  margin:0 clamp(16px,3vw,40px) 0;
+  overflow:hidden;border-radius:4px 4px 0 0;
+  max-height:clamp(280px,40vh,480px)}
+.hero__img{
+  width:100%;height:100%;object-fit:cover;
+  filter:brightness(.65);
+  transition:transform 1.2s cubic-bezier(.16,1,.3,1)}
+.hero:hover .hero__img{transform:scale(1.03)}
+
 .hero__scroll{
-  position:absolute;bottom:28px;left:50%;transform:translateX(-50%);z-index:2;
-  font:600 10px/1 var(--mono);letter-spacing:.25em;color:rgba(255,255,255,.3);
+  position:absolute;bottom:28px;right:var(--gutter);z-index:2;
+  font:600 10px/1 var(--mono);letter-spacing:.25em;color:rgba(255,255,255,.25);
   writing-mode:vertical-rl;
   animation:fadeScroll 2.5s ease-in-out infinite}
-@keyframes fadeScroll{0%,100%{opacity:.2}50%{opacity:.6}}
+@keyframes fadeScroll{0%,100%{opacity:.15}50%{opacity:.5}}
 
 /* ═══ STATEMENT ═══ */
 .stmt{padding:clamp(100px,12vw,180px) 0}
@@ -387,8 +406,10 @@ address{font-style:normal}
     padding:28px var(--gutter);border-top:1px solid var(--c-line)}
   .gnb__burger{display:block}
 
-  .hero{min-height:100svh}
-  .hero__h1{font-size:clamp(30px,8vw,48px)}
+  .hero{min-height:auto}
+  .hero__text{padding:clamp(100px,16vh,140px) var(--gutter) clamp(36px,5vh,56px)}
+  .hero__h1{font-size:clamp(32px,9vw,52px)}
+  .hero__visual{max-height:260px;margin:0 16px 0}
   .hero__ctas{flex-direction:column}
   .hero__ctas .cta{text-align:center}
 
