@@ -1,13 +1,19 @@
 import QtQuick
 import QtQuick3D
 import QtQuick3D.Helpers
+import QtQuick3D.AssetUtils
 import Frize.Cockpit
 
-// 실시간 3D 디지털 트윈 ― 드론 LiDAR + 고글 열화상이 융합된 점유/열 복셀맵.
-// 미탐사(빈) 영역은 안개 + 피사계심도로 흐리게(blur) 표시 → 드론이 그쪽을 채워간다.
+// 실시간 3D 디지털 트윈 ― 드론 LiDAR + 고글 열화상이 융합된 TSDF 표면 메쉬.
+//
+// 매핑 서비스(frize_mapping)가 TSDF→마칭큐브로 구운 twin.gltf 를 RuntimeLoader가
+// 런타임 로드해 '매끈한 표면(정점=열화상 컬러)'으로 렌더한다. 파일이 갱신될 때마다
+// cockpit.twinMeshUrl 이 바뀌어 자동 리로드. 메쉬가 아직 없으면 점유 복셀로 폴백.
+// 미탐사 영역은 안개 + 피사계심도로 흐리게 → 드론이 그쪽을 채워간다.
 Item {
     id: root
-    property real meterToScene: 1.0
+    property real meterToScene: 1.0          // glTF는 실척(m) → 1 unit = 1 m
+    readonly property bool hasMesh: cockpit.twinMeshUrl && cockpit.twinMeshUrl.length > 0
 
     View3D {
         id: view
@@ -15,23 +21,27 @@ Item {
         environment: SceneEnvironment {
             clearColor: "#0c0f13"; backgroundMode: SceneEnvironment.Color
             antialiasingMode: SceneEnvironment.MSAA; antialiasingQuality: SceneEnvironment.High
+            // 접촉음영(AO) → 방 모서리·가구가 입체적으로 읽힘
+            aoEnabled: true; aoStrength: 75; aoDistance: 1.2; aoSoftness: 30
+            tonemapMode: SceneEnvironment.TonemapModeFilmic
             // 미탐사 영역 흐리게: 거리 안개 + 피사계심도
             fog: Fog {
-                enabled: true; color: "#0c0f13"; density: 0.35
-                depthEnabled: true; depthNear: 18; depthFar: 60
+                enabled: true; color: "#0c0f13"; density: 0.32
+                depthEnabled: true; depthNear: 20; depthFar: 65
             }
             depthOfFieldEnabled: true
-            depthOfFieldFocusDistance: 22
-            depthOfFieldFocusRange: 18
-            depthOfFieldBlurAmount: 3.0
+            depthOfFieldFocusDistance: 24
+            depthOfFieldFocusRange: 22
+            depthOfFieldBlurAmount: 2.4
         }
 
         PerspectiveCamera {
-            id: cam; clipFar: 200
+            id: cam; clipFar: 220
             position: Qt.vector3d(18, 22, 18); eulerRotation: Qt.vector3d(-38, 45, 0)
         }
-        DirectionalLight { eulerRotation: Qt.vector3d(-55, -30, 0); brightness: 1.1 }
-        DirectionalLight { eulerRotation: Qt.vector3d(-20, 140, 0); brightness: 0.4; color: "#9fc0ff" }
+        DirectionalLight { eulerRotation: Qt.vector3d(-55, -30, 0); brightness: 1.15; castsShadow: true }
+        DirectionalLight { eulerRotation: Qt.vector3d(-20, 140, 0); brightness: 0.45; color: "#9fc0ff" }
+        DirectionalLight { eulerRotation: Qt.vector3d(90, 0, 0); brightness: 0.25; color: "#ffb27a" } // 화점 반사 채움
 
         // 바닥 그리드
         Model {
@@ -40,15 +50,28 @@ Item {
         }
         AxisHelper { enableXYGrid: false; enableXZGrid: true; gridColor: "#222a33"; scale: Qt.vector3d(0.5,0.5,0.5) }
 
-        // 점유 복셀(열에 따라 색): 드론+고글 융합 결과
+        // ── TSDF 표면 메쉬(주역): glTF 런타임 로드 ────────────────────────────
+        // ENU(z-up) → Qt(y-up): X축 -90° 회전으로 (x,y,z)→(x,z,-y) 매핑.
+        Node {
+            visible: root.hasMesh
+            eulerRotation: Qt.vector3d(-90, 0, 0)
+            scale: Qt.vector3d(root.meterToScene, root.meterToScene, root.meterToScene)
+            RuntimeLoader {
+                id: twinMesh
+                source: cockpit.twinMeshUrl
+                // glTF가 정점컬러(COLOR_0=열화상)를 들고 오므로 그대로 PBR로 표시.
+                instancing: null
+            }
+        }
+
+        // ── 점유 복셀(폴백/디테일): 메쉬 없을 때만 큐브로 표시 ─────────────────
         Repeater3D {
-            model: cockpit.twinVoxels
+            model: root.hasMesh ? [] : cockpit.twinVoxels
             delegate: Model {
                 source: "#Cube"
                 position: Qt.vector3d(modelData.x*root.meterToScene, modelData.z*root.meterToScene, -modelData.y*root.meterToScene)
                 scale: Qt.vector3d(cockpit.voxelSize*0.0105, cockpit.voxelSize*0.0105, cockpit.voxelSize*0.0105)
                 materials: PrincipledMaterial {
-                    // 온도 있으면 적색 발광, 없으면 차가운 회색
                     property real t: modelData.t
                     baseColor: t > -100 ? Qt.rgba(0.9, 0.35 - Math.min(t,300)/900, 0.15, 1) : "#3a424d"
                     emissiveFactor: t > 60 ? Qt.vector3d(0.6,0.15,0.05) : Qt.vector3d(0,0,0)
@@ -64,7 +87,7 @@ Item {
                 source: "#Sphere"
                 position: Qt.vector3d(modelData.x, 1.0, -modelData.y)
                 scale: Qt.vector3d(modelData.radius*0.02, modelData.radius*0.02, modelData.radius*0.02)
-                opacity: 0.28
+                opacity: 0.26
                 materials: PrincipledMaterial {
                     baseColor: modelData.severity==="critical" ? "#e0241c" : modelData.severity==="high" ? "#ff8c00" : "#f5c518"
                     emissiveFactor: Qt.vector3d(0.4,0.1,0.05); alphaMode: PrincipledMaterial.Blend
@@ -103,14 +126,15 @@ Item {
         Node { id: originNode }
     }
 
-    // HUD: 탐사 진행
+    // HUD: 탐사 진행 + 트윈 소스 표시
     Rectangle {
         anchors.left: parent.left; anchors.top: parent.top; anchors.margins: 12
         width: hud.implicitWidth+20; height: 26; radius: 4
         color: Qt.rgba(0,0,0,0.5)
         Row { id: hud; anchors.centerIn: parent; spacing: 8
             Text { text: "DIGITAL TWIN"; color: "#cfd4da"; font.pixelSize: 11; font.bold: true; font.family: "Consolas" }
-            Text { text: "· voxels " + cockpit.twinVoxels.length + " · frontier " + cockpit.twinFrontiers.length
+            Text { text: (root.hasMesh ? "· TSDF surface" : "· voxel " + cockpit.twinVoxels.length)
+                        + " · frontier " + cockpit.twinFrontiers.length
                    color: "#7c828c"; font.pixelSize: 11; font.family: "Consolas" }
         }
     }

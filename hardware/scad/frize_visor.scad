@@ -115,8 +115,30 @@ module helmet_rail(){
 // ---- 측면 스트랩 마운트 ----
 module strap_mount(){ color(C_SHELL) difference(){ rbox([10,24,16],2); rotate([0,90,0]) cylinder(d=8,h=14,center=true,$fn=20);} }
 
+// ---- 측위 포드(NAV): UWB(DWM3000) 정밀 실내측위 + GPS(u-blox) 옥외측위 ----
+//   헬멧 레일 위에 라이저로 물리 접촉. 상단에 GPS 패치 안테나, 전방에 UWB 모노폴.
+//   지휘 트윈에서 대원의 위치(실내 UWB, 옥외 GPS 융합)를 실시간 표시한다.
+module nav_pod(){
+    rz = face_h/2 + 22;            // 헬멧 레일 높이와 정합
+    // 엔클로저(모듈 PCB: UWB + GPS 수신부)
+    color(C_SHELL) translate([0,14,rz+9]) difference(){
+        rbox([48,30,15],3); translate([0,0,3]) rbox([42,24,13],2);
+        translate([0,0,8]) vent(5,22,2.2,6);
+    }
+    // GPS 패치 안테나(상단 금속 패치) ― 하늘 보이게 위로
+    color(C_METAL) translate([0,14,rz+17]) rbox([24,24,2],1,12);
+    color(C_GOLD)  translate([0,14,rz+18.2]) cylinder(d=2,h=2,$fn=12);
+    // UWB 모노폴 안테나(전방 돌출) + 골드 팁
+    color(C_ACCENT) translate([18,4,rz+10]) cylinder(d=4,h=12,$fn=18);
+    color(C_GOLD)   translate([18,4,rz+22]) sphere(2.4,$fn=16);
+    // 상태 LED(측위 fix 표시)
+    color(C_GREEN) for(i=[0:1]) translate([-8+i*6,28,rz+9]) cylinder(d=1.8,h=2,$fn=12);
+    // 라이저: 레일에 물리 접촉(공중부양 방지)
+    color(C_SHELL) translate([0,14,rz+2]) rbox([16,16,10],2);
+}
+
 module assembly(){
-    shell(); lens(); sensor_pod(); helmet_rail();
+    shell(); lens(); sensor_pod(); helmet_rail(); nav_pod();
     for(s=[-1,1]) translate([s*ipd/2, 20, 0]) display_pod();
     for(s=[-1,1]) translate([s*(face_w/2 - 4), 26, 2]) rotate([0,0,s*10]) battery_pod();
     translate([0, 48, 12]) compute_pod();
@@ -126,4 +148,5 @@ module assembly(){
 if (PART_MODE=="ALL") assembly();
 else if (PART_MODE=="SHELL") shell();
 else if (PART_MODE=="SENSOR_POD") sensor_pod();
+else if (PART_MODE=="NAV_POD") nav_pod();
 else if (PART_MODE=="BATTERY_POD") battery_pod();

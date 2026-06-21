@@ -5,6 +5,9 @@
 #include <QJsonValue>
 #include <QHash>
 #include <QDebug>
+#include <QFileInfo>
+#include <QDateTime>
+#include <QDir>
 
 CockpitClient::CockpitClient(QObject* parent) : QObject(parent) {
     connect(&socket_, &QWebSocket::connected,    this, &CockpitClient::onConnected);
@@ -14,6 +17,40 @@ CockpitClient::CockpitClient(QObject* parent) : QObject(parent) {
     reconnect_.setInterval(2000);
     reconnect_.setSingleShot(true);
     connect(&reconnect_, &QTimer::timeout, this, &CockpitClient::connectToCore);
+
+    // 매핑이 twin.gltf를 다시 구우면 watcher가 알려준다 → URL에 캐시버스터를
+    // 붙여 emit → QML Model.source 가 바뀌어 새 메쉬를 다시 로드한다.
+    connect(&twinWatcher_, &QFileSystemWatcher::fileChanged, this, [this](const QString& p){
+        if (!twinWatcher_.files().contains(p)) twinWatcher_.addPath(p);  // 원자적 교체 대응
+        if (QFileInfo::exists(p)) {
+            twinMeshUrl_ = QUrl::fromLocalFile(p).toString()
+                         + "?v=" + QString::number(QDateTime::currentMSecsSinceEpoch());
+            emit twinMeshChanged();
+        }
+    });
+}
+
+void CockpitClient::watchTwinMesh(const QString& path) {
+    twinMeshPath_ = path;
+    if (path.isEmpty()) return;
+    // 디렉터리도 감시(파일이 아직 없거나 교체될 수 있으므로)
+    QFileInfo fi(path);
+    twinWatcher_.addPath(fi.absolutePath());
+    if (fi.exists()) {
+        twinWatcher_.addPath(path);
+        twinMeshUrl_ = QUrl::fromLocalFile(path).toString()
+                     + "?v=" + QString::number(QDateTime::currentMSecsSinceEpoch());
+        emit twinMeshChanged();
+    }
+    connect(&twinWatcher_, &QFileSystemWatcher::directoryChanged, this, [this](const QString&){
+        QFileInfo f(twinMeshPath_);
+        if (f.exists() && !twinWatcher_.files().contains(twinMeshPath_)) {
+            twinWatcher_.addPath(twinMeshPath_);
+            twinMeshUrl_ = QUrl::fromLocalFile(twinMeshPath_).toString()
+                         + "?v=" + QString::number(QDateTime::currentMSecsSinceEpoch());
+            emit twinMeshChanged();
+        }
+    });
 }
 
 void CockpitClient::connectToCore() {

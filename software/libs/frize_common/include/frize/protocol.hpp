@@ -17,7 +17,8 @@ inline constexpr const char* ROOT = "frize";
 
 enum class MessageType {
     Heartbeat, Telemetry, Detection, VideoMeta,
-    Command, CommandAck, Alert, WorldSnapshot, MapPatch, Judgment
+    Command, CommandAck, Alert, WorldSnapshot, MapPatch, Judgment, ArCue,
+    PairRequest, PairGrant, GuideRequest
 };
 
 NLOHMANN_JSON_SERIALIZE_ENUM(MessageType, {
@@ -25,7 +26,10 @@ NLOHMANN_JSON_SERIALIZE_ENUM(MessageType, {
     {MessageType::Detection,"detection"},{MessageType::VideoMeta,"video_meta"},
     {MessageType::Command,"command"},{MessageType::CommandAck,"command_ack"},
     {MessageType::Alert,"alert"},{MessageType::WorldSnapshot,"world_snapshot"},
-    {MessageType::MapPatch,"map_patch"},{MessageType::Judgment,"judgment"}})
+    {MessageType::MapPatch,"map_patch"},{MessageType::Judgment,"judgment"},
+    {MessageType::ArCue,"ar_cue"},
+    {MessageType::PairRequest,"pair_request"},{MessageType::PairGrant,"pair_grant"},
+    {MessageType::GuideRequest,"guide_request"}})
 
 // 토픽 빌더 ― 문자열 하드코딩 금지, 전부 여기 경유(오타로 인한 사일런트 유실 방지)
 struct Topic {
@@ -37,6 +41,14 @@ struct Topic {
     // 코어 → 디바이스 (하향)
     static std::string command(const std::string& id)    { return std::string(ROOT)+"/command/"+id; }
     static std::string command_ack(const std::string& id){ return std::string(ROOT)+"/command/"+id+"/ack"; }
+    static std::string ar_cue(const std::string& id)      { return std::string(ROOT)+"/command/"+id+"/ar"; }
+    // 페어링: 콕핏 → 디바이스 요청, 디바이스 → 콕핏 승인
+    static std::string pair(const std::string& id)        { return std::string(ROOT)+"/pair/"+id; }
+    static std::string pair_grant(const std::string& id)  { return std::string(ROOT)+"/pair/"+id+"/grant"; }
+    static std::string all_pair_grants()                  { return std::string(ROOT)+"/pair/+/grant"; }
+    // 유도: 콕핏 → 내비 서비스(대원 id 별 목표 설정/해제)
+    static std::string guide(const std::string& id)       { return std::string(ROOT)+"/guide/"+id; }
+    static std::string all_guides()                        { return std::string(ROOT)+"/guide/+"; }
     // 브로드캐스트
     static std::string alert()    { return std::string(ROOT)+"/alert"; }
     static std::string world()    { return std::string(ROOT)+"/world/state"; }

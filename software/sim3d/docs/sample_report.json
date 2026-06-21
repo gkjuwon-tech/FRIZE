@@ -1,0 +1,19 @@
+{
+  "voxel_m": 0.07,
+  "trunc_m": 0.28,
+  "volume_dims": [258,200,109],
+  "building_extent_m": [16,12,6.4],
+  "drone_poses": 206, "visor_poses": 80,
+  "scan_points": 1261137,
+  "observed_cells": 3765863,
+  "explored_fraction": 0.669558,
+  "mesh_vertices": 1448949, "mesh_triangles": 723785,
+  "surface_area_m2": 1296.82,
+  "thermal_hotspot_vertices": 8617,
+  "gt_surface_coverage_pct": 97.75,
+  "frontier_final": 118640,
+  "runtime_s": 7.11539,
+  "frontier_curve": [[0.252427,142055],[0.5,74428],[0.752427,236248],[1,118640]],
+  "fire_xyz": [3,2,0.9],
+  "victim_xyz": [13.5,9.5,3.4]
+}

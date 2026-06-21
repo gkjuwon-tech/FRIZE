@@ -21,6 +21,12 @@ int main(int argc, char* argv[]) {
     CockpitClient client;
     client.setCoreUrl(url);
 
+    // TSDF 표면 메쉬(glTF) 자동 로드: 매핑 서비스가 FRIZE_TWIN_DIR/twin.gltf를 굽고
+    // 콕핏은 그 경로를 감시해 갱신 시마다 매끈한 표면을 다시 로드한다.
+    const QString twinDir = qEnvironmentVariable("FRIZE_TWIN_DIR", "");
+    if (!twinDir.isEmpty())
+        client.watchTwinMesh(twinDir + "/twin.gltf");
+
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty("cockpit", &client);
     engine.rootContext()->setContextProperty("coreUrl", url);

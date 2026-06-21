@@ -8,6 +8,7 @@
 #include <QJsonArray>
 #include <QVariantList>
 #include <QVariantMap>
+#include <QFileSystemWatcher>
 
 #include "models.hpp"
 
@@ -26,6 +27,8 @@ class CockpitClient : public QObject {
     Q_PROPERTY(QVariantList twinFrontiers READ twinFrontiers NOTIFY twinUpdated)
     Q_PROPERTY(double voxelSize READ voxelSize NOTIFY twinUpdated)
     Q_PROPERTY(int exploredCells READ exploredCells NOTIFY twinUpdated)
+    // 매핑 서비스가 굽는 TSDF 표면 메쉬(glTF). 파일이 갱신되면 자동 리로드.
+    Q_PROPERTY(QString twinMeshUrl READ twinMeshUrl NOTIFY twinMeshChanged)
 
 public:
     explicit CockpitClient(QObject* parent = nullptr);
@@ -42,8 +45,11 @@ public:
     QVariantList twinFrontiers() const { return twinFrontiers_; }
     double voxelSize() const { return voxelSize_; }
     int exploredCells() const { return exploredCells_; }
+    QString twinMeshUrl() const { return twinMeshUrl_; }
 
     void setCoreUrl(const QString& url) { url_ = QUrl(url); }
+    // 트윈 메쉬 glTF 경로 감시 시작(매핑이 갱신 시 자동 리로드). 빈 경로면 비활성.
+    void watchTwinMesh(const QString& path);
 
 public slots:
     void connectToCore();
@@ -58,6 +64,7 @@ signals:
     void selectedChanged();
     void snapshotUpdated();
     void twinUpdated();
+    void twinMeshChanged();
     void commandResult(const QVariantMap& result);   // 거부/확인필요/발행 결과 → 토스트
 
 private slots:
@@ -88,4 +95,8 @@ private:
     QVariantList twinFrontiers_;
     double voxelSize_ = 0.25;
     int exploredCells_ = 0;
+    // TSDF 표면 메쉬(glTF) 자동 리로드
+    QFileSystemWatcher twinWatcher_;
+    QString twinMeshPath_;     // 디스크 경로
+    QString twinMeshUrl_;      // QML용 file:// URL(+캐시버스터)
 };

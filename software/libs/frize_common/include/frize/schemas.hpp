@@ -53,10 +53,16 @@ enum class HazardClass {
 enum class CommandAction {
     MoveTo, Highlight, Annotate,
     Advance, Retreat, Rally, ForceEntry,
-    ReconZone, Hold, Rtl, Land,
+    ReconZone, InvestigatePoint,    // 드론 명시적 태스킹: "저기 먼저 조사해!"(자율탐사 가로채기)
+    DeployAnchor,                   // 드론이 UWB 측위 비콘을 현 위치/지정점에 투하
+    Hold, Rtl, Land,
     AimAndSpray,
     Open, Close            // IoT 소방장비(VENT-1): 포트/배연구/문 열기·닫기
 };
+
+// ── AR 큐(고글에 띄우는 시각 명령): 텍스트 / 화살표 / 마커 / 경로 / 강조 ──
+//   (구조체 본문은 Vec3 정의 이후, 명령 섹션에 둔다)
+enum class ArCueKind { Text, Arrow, Marker, Route, Highlight, Warning };
 
 enum class CommandStatus {
     Queued, Rejected, NeedsConfirm, Sent, Acked, Executing, Done, Failed
@@ -130,6 +136,10 @@ struct VisorTelemetry {
     double ambient_temp_c{25.0};
     WearerVitals vitals{};
     double compute_temp_c{0.0};
+
+    // 측위(NAV 포드): 실내 UWB / 옥외 GNSS / IMU 추측항법 융합
+    std::string pos_source{"none"};   // none / uwb / gnss / fused / dead_reckon
+    double pos_accuracy_m{99.0};       // 위치 추정 오차(작을수록 정확)
 };
 
 struct ScoutTelemetry {
@@ -200,6 +210,52 @@ struct CommandAck {
     std::string device_id;
     CommandStatus status{CommandStatus::Acked};
     std::string detail;
+    double ts{now_s()};
+};
+
+// ── 페어링(콕핏 ↔ 디바이스 핸드셰이크) ──
+struct PairRequest {
+    std::string device_id;       // 페어링 대상
+    std::string console_id;      // 요청한 콘솔
+    std::string session_id;      // 세션 토큰
+    double ts{now_s()};
+};
+struct PairGrant {
+    std::string device_id;
+    std::string console_id;
+    std::string session_id;
+    bool accepted{true};
+    DeviceType device_type{DeviceType::Visor};
+    std::string fw_version{"0.1.0"};
+    std::vector<std::string> capabilities;   // 예: ["thermal","gas","ar","uwb"]
+    double ts{now_s()};
+};
+
+// 유도 요청(콕핏 → 내비 서비스): 대원에게 목표점 설정 또는 해제.
+//  트윈에서 목표 찍고 대원 찍으면 콕핏이 이걸 발행 → 내비가 경로를 계속 갱신.
+struct GuideRequest {
+    std::string wearer_id;                 // 유도 대상 대원(고글)
+    std::optional<Vec3> target{};          // 목표점(site_enu). 없으면 해제.
+    std::string label{"목표"};             // 표시 라벨(요구조자/출구/가스밸브…)
+    std::string color{"#36c0ff"};          // 경로 색
+    bool active{true};                     // false=유도 중지
+    std::string issued_by{"console"};
+    double ts{now_s()};
+};
+
+// 고글 AR 시각 명령(텍스트/화살표/마커/경로/강조/경고)
+struct ArCue {
+    std::string cue_id;
+    std::string target_device;                 // 어느 대원 고글에
+    ArCueKind kind{ArCueKind::Text};
+    std::string text;                          // Text/Warning 내용
+    std::optional<Vec3> world_pos{};           // Marker/Arrow 시작 또는 앵커(site_enu)
+    std::optional<Vec3> world_to{};            // Arrow 끝점
+    std::vector<Vec3> route{};                 // Route 경유점들
+    std::string color{"#e0a83a"};              // 표시 색(헥스)
+    Severity severity{Severity::Info};
+    double ttl_s{8.0};                         // 표시 지속(초), 0=수동 해제까지
+    std::string issued_by{"console"};
     double ts{now_s()};
 };
 
@@ -296,9 +352,14 @@ NLOHMANN_JSON_SERIALIZE_ENUM(HazardClass, {
 NLOHMANN_JSON_SERIALIZE_ENUM(CommandAction, {
     {CommandAction::MoveTo,"move_to"},{CommandAction::Highlight,"highlight"},{CommandAction::Annotate,"annotate"},
     {CommandAction::Advance,"advance"},{CommandAction::Retreat,"retreat"},{CommandAction::Rally,"rally"},
-    {CommandAction::ForceEntry,"force_entry"},{CommandAction::ReconZone,"recon_zone"},{CommandAction::Hold,"hold"},
+    {CommandAction::ForceEntry,"force_entry"},{CommandAction::ReconZone,"recon_zone"},
+    {CommandAction::InvestigatePoint,"investigate_point"},{CommandAction::DeployAnchor,"deploy_anchor"},
+    {CommandAction::Hold,"hold"},
     {CommandAction::Rtl,"rtl"},{CommandAction::Land,"land"},{CommandAction::AimAndSpray,"aim_and_spray"},
     {CommandAction::Open,"open"},{CommandAction::Close,"close"}})
+NLOHMANN_JSON_SERIALIZE_ENUM(ArCueKind, {
+    {ArCueKind::Text,"text"},{ArCueKind::Arrow,"arrow"},{ArCueKind::Marker,"marker"},
+    {ArCueKind::Route,"route"},{ArCueKind::Highlight,"highlight"},{ArCueKind::Warning,"warning"}})
 NLOHMANN_JSON_SERIALIZE_ENUM(CommandStatus, {
     {CommandStatus::Queued,"queued"},{CommandStatus::Rejected,"rejected"},{CommandStatus::NeedsConfirm,"needs_confirm"},
     {CommandStatus::Sent,"sent"},{CommandStatus::Acked,"acked"},{CommandStatus::Executing,"executing"},
@@ -316,7 +377,14 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(GasReading, co_ppm, o2_vol_pct, 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(WearerVitals, heart_rate_bpm, skin_temp_c, motion_state, air_pressure_bar)
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(Heartbeat, device_id, device_type, fw_version, state, ts)
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(VisorTelemetry, device_id, device_type, ts, state, link, pose,
-    battery_pct, wearer_id, wearer_callsign, gas, ambient_temp_c, vitals, compute_temp_c)
+    battery_pct, wearer_id, wearer_callsign, gas, ambient_temp_c, vitals, compute_temp_c,
+    pos_source, pos_accuracy_m)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ArCue, cue_id, target_device, kind, text, world_pos, world_to,
+    route, color, severity, ttl_s, issued_by, ts)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(GuideRequest, wearer_id, target, label, color, active, issued_by, ts)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(PairRequest, device_id, console_id, session_id, ts)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(PairGrant, device_id, console_id, session_id, accepted,
+    device_type, fw_version, capabilities, ts)
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ScoutTelemetry, device_id, device_type, ts, state, link, pose,
     battery_pct, flight_mode, armed, altitude_m, groundspeed_ms, gps_fix, satellites, gas,
     motor_count_ok, flight_time_remaining_s)

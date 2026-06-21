@@ -39,6 +39,9 @@ int main(){
     std::mutex q; std::deque<Command> cmds;
     bus.subscribe(Topic::command(id), [&](const std::string&, const Envelope& e){
         std::lock_guard<std::mutex> lk(q); cmds.push_back(e.as<Command>()); });
+    // 콕핏 페어링: 배연 IoT 장비 능력 광고
+    bus.enable_pairing(id, DeviceType::Apparatus, "0.1.0",
+                       {"vent_actuator", "fan_speed", "louver"});
     bus.start();
     auto ack=[&](const Command& c, CommandStatus s, const std::string& d){
         CommandAck a; a.cmd_id=c.cmd_id; a.device_id=id; a.status=s; a.detail=d;

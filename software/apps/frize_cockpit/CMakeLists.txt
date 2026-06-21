@@ -5,8 +5,8 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
 
-# Qt6: Quick(QML/3D 가능), WebSockets(코어 연결), Widgets(파일다이얼로그 등)
-find_package(Qt6 REQUIRED COMPONENTS Quick Qml Gui WebSockets Quick3D)
+# Qt6: Quick(QML/3D), WebSockets(코어 연결), Quick3D + AssetUtils(glTF RuntimeLoader)
+find_package(Qt6 REQUIRED COMPONENTS Quick Qml Gui WebSockets Quick3D Quick3DAssetUtils)
 
 qt_standard_project_setup(REQUIRES 6.5)
 
@@ -44,5 +44,5 @@ qt_add_qml_module(frize_cockpit
 target_include_directories(frize_cockpit PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 target_link_libraries(frize_cockpit PRIVATE
-    Qt6::Quick Qt6::Qml Qt6::Gui Qt6::WebSockets Qt6::Quick3D
+    Qt6::Quick Qt6::Qml Qt6::Gui Qt6::WebSockets Qt6::Quick3D Qt6::Quick3DAssetUtils
 )

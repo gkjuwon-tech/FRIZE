@@ -1,7 +1,7 @@
 add_executable(frize_mapping src/main.cpp)
 target_include_directories(frize_mapping PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_compile_features(frize_mapping PRIVATE cxx_std_17)
-target_link_libraries(frize_mapping PRIVATE frize_common)
+target_link_libraries(frize_mapping PRIVATE frize_common frize_recon)
 
 # Eigen / PCL (실제 LiDAR SLAM)
 find_package(Eigen3 CONFIG QUIET)

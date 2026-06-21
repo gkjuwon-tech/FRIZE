@@ -30,7 +30,9 @@ module deck(){
             translate([0,-D/2-2,-8]) rotate([32,0,0]) cube([W+8,60,46],center=true);  // 앞 손목 베벨
             for(s=[-1,1]) translate([s*(W/2-2),40,Hb/2]) rotate([0,90,0]) vent(4,80,3,9);
         }
-        m("rubber",C_RUBBER) translate([0,-D/2+16,Hb-12]) rotate([32,0,0]) rbox([W-40,40,6],3,10); // 손목받침
+        // 손목받침: 데크는 중앙기준(±Hb/2)이므로 상면=+Hb/2. 앞 베벨 위에 안착하도록
+        // 로컬 z=Hb/2-7(=세계 z≈72)에 두고 32° 기울여 데크 상면에 박히게(공중부양 방지).
+        m("rubber",C_RUBBER) translate([0,-D/2+18,Hb/2-7]) rotate([32,0,0]) rbox([W-40,40,7],3,10);
     }
 }
 
@@ -51,22 +53,10 @@ module knob(d=34,h=16){ m("metal",C_METAL) cylinder(d=d,h=h,$fn=36);
     m("body",C_BODY) translate([0,0,h]) cylinder(d=d-4,h=2,$fn=36);
     m("accent",C_ACCENT) translate([0,d/2-4,h+1]) cube([2,5,2],center=true); }
 
-module controls(){
-    z=Hb+0.4;
-    // 기능 버튼 매트릭스 6 x 3 (조작 대부분을 물리버튼으로)
-    for(i=[-2.5:1:2.5], j=[0:2]) translate([i*34, -36+j*30, z]) key(C_BODY,26,8);
-    // 유닛 선택 전용키 행(앞단, 레드 1개 강조)
-    for(i=[-3:1:3]) translate([i*44, -D/2+54, z]) key(i==0?C_ACCENT:C_BODY,30,9);
-    // 좌측 인코더 2 + 우측 조그다이얼
-    translate([-W/2+58, 50, z]) knob(34,16);
-    translate([-W/2+58, 6, z]) knob(30,14);
-    translate([ W/2-70, 30, z]) knob(60,20);
-    // E-STOP
-    m("metal",C_METAL) translate([W/2-62,D/2-66,z]) cylinder(d=46,h=10,$fn=40);
-    m("accent",C_ACCENT) translate([W/2-62,D/2-66,z+8]) { cylinder(d=40,h=12,$fn=40); translate([0,0,12]) sphere(20,$fn=28);}
-    // 상태 LED 줄
-    m("body",C_BODY) for(i=[0:3]) translate([-W/2+120+i*16, D/2-30, z]) cylinder(d=5,h=2,$fn=14);
-}
+// 컨트롤덱은 control_map.json에서 생성된 레전드(각인 라벨 키캡 + 인코더/조그/E-STOP).
+// → 콘솔 버튼이 콕핏 기능과 1:1로 정확히 일치한다. (gen_console_legend.py)
+include <console_legend.scad>;
+module controls(){ frize_controls(); }
 
 // ---- 측면 핸들 / 범퍼 / 후면포트 / 안테나 / 배터리 / 발 ----
 module handles(){ for(s=[-1,1]) m("metal",C_METAL)

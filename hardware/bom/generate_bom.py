@@ -20,7 +20,9 @@ VISOR = [
     ("저조도 RGB 카메라", "Sony STARVIS 글로벌셔터 모듈", 1, 220, ""),
     ("AR 디스플레이", "양안 도파관 + 1080p microOLED 모듈", 1, 1200, "시각 명령 출력부"),
     ("IMU", "Bosch BMI088 (산업용 6축)", 1, 25, "머리 자세/움직임"),
-    ("RTK GNSS", "u-blox ZED-F9P", 1, 190, "cm급 위치"),
+    ("RTK GNSS", "u-blox ZED-F9P", 1, 190, "옥외 cm급 위치"),
+    ("UWB 실내측위 모듈", "Qorvo DWM3000 (DW3110, 802.15.4z)", 1, 28, "★실내 0.1~0.3m 측위(GPS 차폐 보완)"),
+    ("UWB 안테나", "UWB 칩 안테나 + 동축", 1, 8, "nav 포드 모노폴"),
     ("CO 가스센서", "Alphasense 전기화학식 CO", 1, 60, ""),
     ("O2 가스센서", "전기화학식 산소 농도", 1, 80, "산소결핍 경보"),
     ("가연성가스(LEL) 센서", "촉매연소/NDIR LEL", 1, 120, "폭발하한 감지"),
@@ -69,6 +71,8 @@ SCOUT = [
     ("방진댐퍼/스탠드오프", "짐벌/FC 방진 + 하드웨어", 1, 80, ""),
     ("배선/커넥터", "실리콘 와이어, XT90, 방수커넥터", 1, 70, ""),
     ("스토리지", "NVMe 256GB", 1, 40, ""),
+    ("UWB 앵커 디스펜서", "3발 매거진 + 서보 게이트(scad DISPENSER)", 1, 60, "★진입 시 비콘 투하"),
+    ("디스펜서 서보+릴리즈", "메탈기어 서보 + 게이트 슬라이드", 1, 25, "1발씩 낙하"),
 ]
 
 TOOLS = [
@@ -153,6 +157,16 @@ VENT = [
     ("배선/방수커넥터", "하네스, IP67 커넥터", 1, 30, ""),
 ]
 
+# ANCHOR-1: 드론이 투하하는 UWB 측위 비콘(소모성, 다수 비치). 단가×수량.
+ANCHOR = [
+    ("UWB 비콘 MCU", "ESP32-C3 + Qorvo DWM3000(앵커 모드)", 6, 22, "삼변측량 앵커"),
+    ("UWB 안테나", "칩 안테나 + 매칭", 6, 4, ""),
+    ("배터리(단셀)", "21700 + 보호회로(저온 대응)", 6, 9, "수 시간 가동"),
+    ("자기복원 무게추", "텅스텐/스틸 베이스(굴러서 똑바로)", 6, 6, "self-righting"),
+    ("충격흡수 범퍼+셸", "TPU 범퍼 + 고시인성 PC 셸", 6, 8, "scad frize_anchor"),
+    ("상태 LED/스위치", "투하·fix 표시, 자동 전원", 6, 3, ""),
+]
+
 
 def subtotal(rows):
     return sum(q*p for _,_,q,p,_ in rows)
@@ -211,7 +225,7 @@ def build_xlsx(path):
     # Summary
     ws = wb.active; ws.title = "요약"
     v = subtotal(VISOR); s = subtotal(SCOUT); t = subtotal(TOOLS); ifc = subtotal(INTERFACE)
-    cn = subtotal(CONSOLE); vn = subtotal(VENT)
+    cn = subtotal(CONSOLE); vn = subtotal(VENT); an = subtotal(ANCHOR)
     ws["A1"] = "FRIZE 하드웨어 BOM 요약"; ws["A1"].font = title_font
     ws["A2"] = "작성일 %s · 단가 추정 USD · 환율 %d KRW/USD" % (date.today().isoformat(), USD_KRW)
     ws["A2"].font = Font(italic=True, size=9, color="888888")
@@ -220,10 +234,11 @@ def build_xlsx(path):
         ("VISOR-1 스마트고글 (1대)", v),
         ("SCOUT-1 정찰드론 (1대)", s),
         ("VENT-1 IoT 배연/진입 포트 (1대)", vn),
+        ("ANCHOR-1 UWB 측위 비콘 (6발 세트)", an),
         ("SW↔HW 연결/인터페이스 (1세트)", ifc),
         ("공구/소모품 (1세트, 1회성)", t),
-        ("── 지휘소 1식 (콘솔+고글+드론+VENT+연결+공구)", cn+v+s+vn+ifc+t),
-        ("참고: 콘솔1+고글3+드론2+VENT2+연결+공구1 운영세트", cn + v*3 + s*2 + vn*2 + ifc + t),
+        ("── 지휘소 1식 (콘솔+고글+드론+VENT+앵커+연결+공구)", cn+v+s+vn+an+ifc+t),
+        ("참고: 콘솔1+고글3+드론2+VENT2+앵커12+연결+공구1 운영세트", cn + v*3 + s*2 + vn*2 + an*2 + ifc + t),
     ]
     hdr = ["항목", "USD", "KRW"]
     for c,h in enumerate(hdr,1):
@@ -241,12 +256,13 @@ def build_xlsx(path):
     sheet_from(wb.create_sheet("VISOR-1 고글"), "FRIZE VISOR-1 ― 스마트 고글 BOM", VISOR)
     sheet_from(wb.create_sheet("SCOUT-1 드론"), "FRIZE SCOUT-1 ― 정찰 드론 BOM", SCOUT)
     sheet_from(wb.create_sheet("VENT-1 IoT포트"), "FRIZE VENT-1 ― IoT 자동 배연/진입 포트 BOM", VENT)
+    sheet_from(wb.create_sheet("ANCHOR-1 UWB비콘"), "FRIZE ANCHOR-1 ― 드론 투하 UWB 측위 비콘 BOM (6발)", ANCHOR)
     sheet_from(wb.create_sheet("SW-HW 연결"), "SW ↔ HW 연결 / 인터페이스 (소프트웨어가 하드웨어를 구동하는 접점)", INTERFACE)
     sheet_from(wb.create_sheet("공구·소모품"), "공구 / 소모품 (차고 셋업)", TOOLS)
 
     wb.save(path)
     print("XLSX 저장:", path)
-    print("  CONSOLE=%d  VISOR=%d  SCOUT=%d  VENT=%d  IFACE=%d  TOOLS=%d USD" % (cn,v,s,vn,ifc,t))
+    print("  CONSOLE=%d  VISOR=%d  SCOUT=%d  VENT=%d  ANCHOR=%d  IFACE=%d  TOOLS=%d USD" % (cn,v,s,vn,subtotal(ANCHOR),ifc,t))
 
 # ---------------------------------------------------------------------
 #  PDF 생성
@@ -309,13 +325,14 @@ def build_pdf(path):
     story.append(Spacer(1, 10))
 
     v=subtotal(VISOR); s=subtotal(SCOUT); t=subtotal(TOOLS); ifc=subtotal(INTERFACE)
-    cn=subtotal(CONSOLE); vn=subtotal(VENT)
-    total=cn+v+s+vn+ifc+t
+    cn=subtotal(CONSOLE); vn=subtotal(VENT); an=subtotal(ANCHOR)
+    total=cn+v+s+vn+an+ifc+t
     sumdata = [[P("항목",cellb),P("USD",cellb),P("KRW",cellb)],
                [P("CONSOLE-1 지휘 콘솔 (1대)"),P(f"{cn:,}"),P(f"{cn*USD_KRW:,}")],
                [P("VISOR-1 고글 (1대)"),P(f"{v:,}"),P(f"{v*USD_KRW:,}")],
                [P("SCOUT-1 드론 (1대)"),P(f"{s:,}"),P(f"{s*USD_KRW:,}")],
                [P("VENT-1 IoT 포트 (1대)"),P(f"{vn:,}"),P(f"{vn*USD_KRW:,}")],
+               [P("ANCHOR-1 UWB 비콘 (6발)"),P(f"{an:,}"),P(f"{an*USD_KRW:,}")],
                [P("SW↔HW 연결/인터페이스 (1세트)"),P(f"{ifc:,}"),P(f"{ifc*USD_KRW:,}")],
                [P("공구/소모품 (1세트)"),P(f"{t:,}"),P(f"{t*USD_KRW:,}")],
                [P("지휘소 1식 합계",cellb),P(f"{total:,}",cellb),P(f"{total*USD_KRW:,}",cellb)]]
@@ -337,6 +354,7 @@ def build_pdf(path):
     make_table("SCOUT-1 ― 정찰 드론", SCOUT)
     story.append(PageBreak())
     make_table("VENT-1 ― IoT 자동 배연/진입 포트", VENT)
+    make_table("ANCHOR-1 ― 드론 투하 UWB 측위 비콘 (6발)", ANCHOR)
     make_table("SW ↔ HW 연결 / 인터페이스 (소프트웨어가 하드웨어를 구동하는 접점)", INTERFACE)
     make_table("공구 / 소모품 (차고 셋업)", TOOLS)
     story.append(Paragraph("※ 가격은 공급사/MOQ/환율에 따라 변동. 핵심 부품(열화상·LiDAR·하우징)은 스펙 우선, 가격 후순위.", small))
@@ -348,6 +366,6 @@ if __name__ == "__main__":
     here = os.path.dirname(os.path.abspath(__file__))
     build_xlsx(os.path.join(here, "FRIZE_BOM.xlsx"))
     build_pdf(os.path.join(here, "FRIZE_BOM.pdf"))
-    v=subtotal(VISOR); s=subtotal(SCOUT); t=subtotal(TOOLS); ifc=subtotal(INTERFACE); cn=subtotal(CONSOLE); vn=subtotal(VENT)
+    v=subtotal(VISOR); s=subtotal(SCOUT); t=subtotal(TOOLS); ifc=subtotal(INTERFACE); cn=subtotal(CONSOLE); vn=subtotal(VENT); an=subtotal(ANCHOR)
     tot=cn+v+s+vn+ifc+t
     print("=== 지휘소 1식 합계: $%d  (approx %d KRW) ===" % (tot, tot*USD_KRW))

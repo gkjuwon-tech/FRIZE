@@ -1,0 +1,25 @@
+# 빌드 산출물
+build/
+**/build/
+*.o
+*.obj
+*.a
+*.so
+
+# 트윈 재구성 시뮬 출력(거대 메쉬/바이너리는 커밋 안 함 — docs/ 의 큐레이션 프리뷰만)
+software/sim3d/out/
+**/twin.gltf
+**/twin.bin
+**/twin*.ply
+**/twin.obj
+
+# 파이썬
+__pycache__/
+*.pyc
+.venv/
+
+# 에디터/OS
+.vscode/
+.idea/
+.DS_Store
+compile_commands.json
