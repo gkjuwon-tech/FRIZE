@@ -1,259 +1,170 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>FRIZE — 소방 현장 지휘 운영체제 (Command OS)</title>
-<meta name="description" content="FRIZE는 드론·스마트고글·IoT 배연장비·지휘콘솔을 하나의 커널(CORE)로 묶어, 소방 현장을 실시간 3D 디지털 트윈으로 재구성하고 지휘를 통합하는 Command OS입니다.">
-<link rel="preconnect" href="https://cdn.jsdelivr.net">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<!doctype html><html lang="ko"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FRIZE — 소방 현장 지휘 OS — FRIZE</title>
+<meta name="description" content="연기 속 현장을 실시간 3D로 보고, 생존자를 자동 탐지하고, 대원을 AR로 안내하는 현장 지휘 운영체제.">
+<meta property="og:title" content="FRIZE — 소방 현장 지휘 OS — FRIZE Command OS">
+<meta property="og:description" content="연기 속 현장을 실시간 3D로 보고, 생존자를 자동 탐지하고, 대원을 AR로 안내하는 현장 지휘 운영체제.">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-
-<!-- ░░ NAV ░░ -->
-<header class="nav">
-  <div class="wrap nav-in">
-    <a class="logo" href="#"><b>F</b>RIZE</a>
-    <nav class="nav-menu">
-      <a href="#product">제품 소개</a>
-      <a href="#features">핵심 기능</a>
-      <a href="#scenario">적용 시나리오</a>
-      <a href="#tech">기술</a>
-      <a href="#roadmap">로드맵</a>
-      <a href="#company">회사 소개</a>
-    </nav>
-    <a class="btn btn-red nav-cta" href="#demo">데모 요청</a>
-  </div>
-</header>
-
-<!-- ░░ HERO ░░ -->
-<section class="hero" id="product">
-  <div class="wrap hero-grid">
-    <div>
-      <h1>현장을 연결하고,<br><span class="ln2">지휘를 통합하다.</span></h1>
-      <p class="lead">FRIZE는 소방 현장을 하나의 운영체제(Command&nbsp;OS)로 통합합니다. 드론·스마트고글·IoT 배연장비를 지휘 커널(CORE)이 실시간으로 묶고, 지휘관은 3D 디지털 트윈을 보며 상황을 인지하고 신속·정확하게 대원과 장비를 통제합니다.</p>
-      <div class="hero-btns">
-        <a class="btn btn-red" href="#demo">데모 영상 보기
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></a>
-        <a class="btn btn-ghost" href="#demo">제품 소개서 다운로드
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"/></svg></a>
-      </div>
+</head><body><header class="nav"><div class="nav-in">
+<a class="brand" href="index.html"><span class="mk"></span>FRIZE</a>
+<nav class="nav-links"><a href="mission.html" class="">미션</a><a href="system.html" class="">시스템</a><a href="company.html" class="">회사소개</a><a href="news.html" class="">뉴스</a><a href="careers.html" class="">채용</a></nav>
+<a class="nav-cta" href="demo.html">데모 요청 →</a>
+<button class="burger" aria-label="menu">MENU</button>
+</div></header>
+<section class="hero">
+  <div class="ticks"><span class="tl"></span><span class="tr"></span><span class="bl"></span><span class="br"></span></div>
+  <div class="hero-bg"><img src="assets/cockpit_hero.jpg" alt="FRIZE 지휘 콕핏"></div>
+  <div class="hero-in">
+    <div class="eyebrow rv"><span class="i">●</span>&nbsp;&nbsp;FIRE-RESPONSE INTEGRATED ZONE-CONTROL ENVIRONMENT</div>
+    <h1 class="rv">연기 속에서,<br>지휘는 <em>멈추지 않는다.</em></h1>
+    <p class="lead rv">FRIZE는 드론·스마트 고글·현장 IoT·지휘 콕핏을 하나의 실시간 망으로 묶는 소방 현장 지휘 운영체제입니다. 보이지 않는 건물 내부를 3D로 재구성하고, 생존자를 자동으로 탐지하며, 대원의 고글에 목표까지의 길을 그립니다.</p>
+    <div class="hero-actions rv">
+      <a class="btn btn-pri" href="demo.html">현장 데모 요청 <span class="ar">→</span></a>
+      <a class="btn btn-ghost" href="system.html">시스템 살펴보기 <span class="ar">→</span></a>
     </div>
-    <div class="hero-media">
-      <img src="assets/hero.jpg" alt="FRIZE 지휘 통제실에서 3D 디지털 트윈으로 현장을 통제하는 지휘관">
+    <div class="hero-meta rv">
+      <span>STATUS <b>OPERATIONAL</b></span><span>BUILD <b>v2026.06</b></span>
+      <span>SITE <b>CHEONGJU · KR</b></span><span data-clock>--:--:--Z</span>
     </div>
   </div>
+  <div class="scrollcue">SCROLL</div>
 </section>
 
-<!-- ░░ 피처 스트립 ░░ -->
-<section class="strip">
-  <div class="wrap strip-grid">
-    <div class="strip-item">
-      <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M12 3v18M4 7.5l8 4.5 8-4.5"/></svg>
-      <div><h4>실시간 3D 현장 트윈</h4><p>드론·고글·IoT 센서를 융합해 현장을 3D로 복제합니다.</p></div>
-    </div>
-    <div class="strip-item">
-      <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><circle cx="5" cy="6" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="12" cy="20" r="2"/><path d="M7 7l3 3m7-3l-3 3m-2 5v2"/></svg>
-      <div><h4>통합 지휘 &amp; 통신</h4><p>대원·드론·장비를 하나의 메시 네트워크로 연결합니다.</p></div>
-    </div>
-    <div class="strip-item">
-      <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 12a9 9 0 1018 0 9 9 0 00-18 0z"/><path d="M12 8v4l3 2"/></svg>
-      <div><h4>상황 인식 &amp; 위험 예측</h4><p>VLM이 영상·센서를 판단해 위험을 우선순위로 제안합니다.</p></div>
-    </div>
-    <div class="strip-item">
-      <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg>
-      <div><h4>대원 안전 최우선</h4><p>생체·장비·현장 상태를 실시간 모니터링하고 경보합니다.</p></div>
-    </div>
-    <div class="strip-item">
-      <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 3h9l5 5v13H6z"/><path d="M15 3v5h5M9 13h6M9 17h6"/></svg>
-      <div><h4>기록 &amp; 리포팅</h4><p>모든 판단·명령·상황을 자동 기록해 보고서를 생성합니다.</p></div>
-    </div>
+<section class="sec">
+  <div class="wrap rv">
+    <p class="statement"><span class="dim">화재 현장에서 가장 위험한 것은 불이 아니라 </span><b>모름</b><span class="dim">입니다. FRIZE는 그 모름을 </span>보임<span class="dim">으로, </span>늦음<span class="dim">을 </span>즉시<span class="dim">로 바꿉니다.</span></p>
   </div>
-</section>
-
-<!-- ░░ 흐름 ░░ -->
-<section class="block" id="flow">
   <div class="wrap">
-    <div class="head"><h2 class="sec-title">FRIZE가 바꾸는 현장의 흐름</h2></div>
-    <div class="flow">
-      <div class="step">
-        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 9l3-3 3 3M20 9l-3-3-3 3M7 6v5a5 5 0 005 5 5 5 0 005-5V6"/><circle cx="12" cy="19" r="2"/></svg>
-        <h3><span class="no">01.</span> 정찰</h3>
-        <p>SCOUT 드론이 자율 비행으로 건물 외부·내부를 탐사하고 실시간 데이터를 수집합니다.</p>
-        <svg class="arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
-      </div>
-      <div class="step">
-        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 6l9 4 9-4-9-4-9 4z"/><path d="M3 12l9 4 9-4M3 18l9 4 9-4"/></svg>
-        <h3><span class="no">02.</span> 분석</h3>
-        <p>융합된 데이터를 TSDF 점유·열 복셀로 3D 재구성하고 위험 요소를 분석합니다.</p>
-        <svg class="arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
-      </div>
-      <div class="step">
-        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="13" rx="1.5"/><path d="M8 21h8M12 17v4M8 9l3 3-3 3M14 14h3"/></svg>
-        <h3><span class="no">03.</span> 지휘</h3>
-        <p>지휘관이 트윈 인터페이스에서 대원·장비에 명확한 임무를 딸깍으로 지시합니다.</p>
-        <svg class="arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
-      </div>
-      <div class="step">
-        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="6" r="2.4"/><circle cx="17" cy="7" r="2"/><path d="M8 9v5l-2 6M8 14l3 2 1 5M17 9v4l2 5"/></svg>
-        <h3><span class="no">04.</span> 실행</h3>
-        <p>대원은 고글 AR 가이드를 따라 임무를 수행하고, 안전 인터록이 명령을 검증합니다.</p>
-        <svg class="arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
-      </div>
-      <div class="step">
-        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></svg>
-        <h3><span class="no">05.</span> 구조 &amp; 복귀</h3>
-        <p>요구조자 구조와 임무를 완료하고, 대원과 장비는 안전하게 복귀합니다.</p>
-      </div>
+    <div class="pillars">
+      <div class="pillar rv"><div class="no">01</div><h3>디지털 트윈</h3><p>드론·고글 스캔을 융합해 건물 내부를 실시간 3D 표면으로 재구성. 탐사가 진행될수록 화면이 채워집니다.</p><div class="tag">SITUATIONAL AWARENESS</div></div>
+      <div class="pillar rv"><div class="no">02</div><h3>자동 탐지</h3><p>비전 AI가 영상을 장면 단위로 이해해 생존자·화점·위험을 '왜'와 함께 자동 분류합니다.</p><div class="tag">VLM · RATIONALE</div></div>
+      <div class="pillar rv"><div class="no">03</div><h3>AR 길안내</h3><p>목표와 대원을 지정하면, 대원이 움직일 때마다 경로를 재계산해 고글 바닥에 화살표로 안내합니다.</p><div class="tag">REAL-TIME REROUTE</div></div>
+      <div class="pillar rv"><div class="no">04</div><h3>안전 인터록</h3><p>모든 명령은 생명 직결 검문을 통과하고, 차단에는 사람이 읽는 이유가 붙습니다.</p><div class="tag">HUMAN-IN-THE-LOOP</div></div>
     </div>
   </div>
 </section>
 
-<div class="wrap"><div class="divider"></div></div>
-
-<!-- ░░ 핵심 기능 ░░ -->
-<section class="block" id="features">
-  <div class="wrap">
-    <div class="head"><h2 class="sec-title">핵심 기능</h2>
-      <p class="sec-sub">현장의 모든 노드를 하나의 커널(CORE)이 버스로 묶습니다.</p></div>
-    <div class="cards">
-      <article class="card">
-        <div class="card-img"><img src="assets/twin.png" alt="3D 디지털 트윈"><span class="pill">DIGITAL TWIN</span></div>
-        <div class="card-body"><h3>실시간 3D 디지털 트윈</h3>
-          <ul><li>드론 LiDAR + 고글 열화상 융합 표면 재구성</li><li>층 단면·투명도 조절, 화점·연기 시각화</li><li>미탐사 프런티어 자동 탐사로 빈 공간 채움</li></ul></div>
-      </article>
-      <article class="card">
-        <div class="card-img"><img src="assets/visor.png" alt="스마트 고글 VISOR-1"><span class="pill">VISOR-1</span></div>
-        <div class="card-body"><h3>스마트 고글 AR</h3>
-          <ul><li>대원에게 필요한 정보만 직관적으로 표시</li><li>AR 내비게이션 &amp; 지휘 명령 오버레이</li><li>가스·열·자세 센서 + 위험 알림</li></ul></div>
-      </article>
-      <article class="card">
-        <div class="card-img"><img src="assets/scout.png" alt="정찰 드론 SCOUT-1"><span class="pill">SCOUT-1</span></div>
-        <div class="card-body"><h3>드론 자동 정찰</h3>
-          <ul><li>지정 구역별 자율 프런티어 탐사 비행</li><li>열화상·가스·LiDAR 동시 탐지</li><li>VLM 판단으로 결과 자동 분석·리포트</li></ul></div>
-      </article>
-      <article class="card">
-        <div class="card-img"><img src="assets/vent.png" alt="IoT 배연포트 VENT-1"><span class="pill">VENT-1</span></div>
-        <div class="card-body"><h3>장비 제어 &amp; IoT 연동</h3>
-          <ul><li>배연포트·방화문 등 현장 장비 원격 제어</li><li>지휘 명령 → 안전 인터록 → 장비 작동</li><li>개폐 상태·온도·가스 실시간 텔레메트리</li></ul></div>
-      </article>
-      <article class="card">
-        <div class="card-img"><img src="assets/console.png" alt="지휘 콘솔 CONSOLE-1"><span class="pill">CONSOLE-1</span></div>
-        <div class="card-body"><h3>지휘 콘솔 &amp; 통합 관제</h3>
-          <ul><li>야전형 콘솔 + 물리 버튼 + E-STOP 안전경로</li><li>WebSocket 실시간 월드 스냅샷</li><li>딸깍 명령 → 인터록 통과분만 디바이스로</li></ul></div>
-      </article>
-      <article class="card">
-        <div class="card-img"><img src="assets/pov.jpg" alt="대원 1인칭 시야 공유"><span class="pill">FIELD POV</span></div>
-        <div class="card-body"><h3>대원 시야 공유 &amp; 안전</h3>
-          <ul><li>모든 대원의 1인칭 시야 실시간 멀티뷰</li><li>산소·심박·체온·SCBA 잔압 모니터링</li><li>이상 자세·고립 AI 감지 → 복귀 지시</li></ul></div>
-      </article>
+<section class="sec" style="padding-top:0;padding-bottom:0;border:0" id="capabilities">
+  <div class="frow">
+    <div class="ftext rv">
+      <div class="kicker"><span class="ln"></span>01 — DIGITAL TWIN</div>
+      <h3>보이지 않던 내부가,<br>형태로 드러난다</h3>
+      <p>드론 LiDAR와 고글 깊이 스캔을 누적 융합해 큐브 떡이 아닌 '진짜 표면'을 만듭니다. 복도·방·가구·화점이 드러나고, 화점의 열은 색으로 입혀집니다. 아직 못 본 곳은 비어 있어 어디를 더 봐야 하는지가 명확합니다.</p>
+      <ul>
+        <li><b>실시간 누적</b> — 탐사 진행에 따라 트윈이 채워짐</li>
+        <li><b>열화상 융합</b> — 표면에 온도 채널을 입혀 화점 시각화</li>
+        <li><b>프런티어</b> — 미탐사 영역을 드론 자율 탐사 목표로 환류</li>
+      </ul>
     </div>
+    <figure class="fmedia rv"><span class="badge">RECON / TWIN</span><img src="assets/twin.jpg" alt="디지털 트윈 컷어웨이"><figcaption><span>TSDF SURFACE · CUTAWAY</span><span>RECON 55% · 2.4M PTS</span></figcaption></figure>
+  </div>
+  <div class="frow rev">
+    <div class="ftext rv">
+      <div class="kicker"><span class="ln"></span>03 — AR NAVIGATION</div>
+      <h3>목표만 찍으면,<br>길이 그려진다</h3>
+      <p>지휘관이 목표 지점과 대원을 지정하면, 시스템이 벽을 피하고 문을 통과하는 경로를 계산해 대원 고글에 바닥 화살표로 띄웁니다. 대원이 한 걸음 옮길 때마다 경로가 다시 계산되고, 코너에서는 회전 방향이 바뀌며, 도착하면 스스로 종료됩니다.</p>
+      <ul>
+        <li><b>실시간 재유도</b> — 위치 갱신마다 경로 재계산 (~5Hz)</li>
+        <li><b>벽 회피·우회</b> — 막다른 길로 안내하지 않음</li>
+        <li><b>회전·거리 안내</b> — 좌/직/우 + 남은 거리 표시</li>
+      </ul>
+    </div>
+    <figure class="fmedia rv"><span class="badge">VISOR / AR</span><img src="assets/goggle.jpg" alt="고글 AR 길안내"><figcaption><span>POV · VISOR-1 · 1인칭</span><span>A* RE-PLAN · 5Hz</span></figcaption></figure>
   </div>
 </section>
 
-<!-- ░░ PoC ░░ -->
-<section class="block poc" id="tech">
-  <div class="wrap">
-    <div class="head"><h2 class="sec-title">실전 같은 훈련, 확실한 변화 <span style="color:var(--tx3);font-size:18px;font-weight:600">(PoC 결과)</span></h2></div>
-    <div class="stats">
-      <div class="stat">
-        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6"/></svg>
-        <div class="big">−47%</div><h4>상황 인지 시간 단축</h4><p>현장 스캔부터 위험 분석까지</p>
-      </div>
-      <div class="stat">
-        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/><circle cx="12" cy="12" r="4"/><path d="M5 5l2 2M17 17l2 2"/></svg>
-        <div class="big">−35%</div><h4>명령 전달 시간 단축</h4><p>명확한 지시로 신속한 실행</p>
-      </div>
-      <div class="stat">
-        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.4"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M15 20c0-2 .8-3.8 2-5"/></svg>
-        <div class="big">+32%</div><h4>대원 생존율 향상 <span style="font-size:12px;color:var(--tx4)">(시뮬레이션)</span></h4><p>적절한 의사결정·경로 안내 효과</p>
-      </div>
-      <div class="stat">
-        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7l8-4z"/><path d="M9 12l2 2 4-4"/></svg>
-        <div class="big">100%</div><h4>주요 장비 연동 성공률</h4><p>안정적인 제어 및 모니터링</p>
-      </div>
-    </div>
-    <p class="poc-note">* 위 수치는 통제된 환경의 훈련 및 내부 테스트 결과이며, 실제 현장 결과와 다를 수 있습니다.</p>
+<section class="band">
+  <img src="assets/scene_fire.jpg" alt="화재 현장">
+  <div class="band-in rv">
+    <div class="eyebrow" style="margin-bottom:18px"><span class="i">●</span>&nbsp;&nbsp;THE FIRST 180 SECONDS</div>
+    <h2>현장의 모든 1초가<br>판단의 무게를 가진다</h2>
+    <p>출동에서 구조까지, FRIZE는 지휘관이 '무엇을·누구에게'만 정하게 합니다. 상황인식·경로·통신·안전은 시스템이 처리합니다.</p>
+    <div class="hero-actions" style="margin-top:28px"><a class="btn btn-ghost" href="mission.html">작전 흐름 보기 <span class="ar">→</span></a></div>
   </div>
 </section>
 
-<!-- ░░ 적용 시나리오 ░░ -->
-<section class="block" id="scenario">
-  <div class="wrap">
-    <div class="head"><h2 class="sec-title">다양한 현장에 적용 가능한 FRIZE</h2></div>
-    <div class="tabs">
-      <button class="tab on">고층 건물 화재</button>
-      <button class="tab">지하 공간 화재</button>
-      <button class="tab">산업 시설 화재</button>
-      <button class="tab">산악/산림 화재</button>
-      <button class="tab">복합 재난 현장</button>
-    </div>
-    <div class="scn">
-      <div class="scn-img"><img src="assets/highrise.jpg" alt="고층 건물 화재 현장"></div>
-      <div class="scn-body">
-        <h3>고층 건물 화재</h3>
-        <p>드론과 3D 트윈으로 전체 건물을 빠르게 파악하고, 대원의 진입 경로와 피난 유도·환기/배연 제어를 통합적으로 지원합니다.</p>
-        <ul>
-          <li>옥상·외벽·내부 상황 통합 파악</li>
-          <li>수직 이동 경로 및 피난 동선 안내</li>
-          <li>연기 확산 예측 및 배연 대안 제시</li>
-          <li>고층 특성에 맞춘 장비 연동 및 자원 최적화</li>
-        </ul>
-      </div>
-      <div class="scn-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></div>
-    </div>
+<section class="sec" style="padding-bottom:0">
+  <div class="wrap" style="margin-bottom:clamp(40px,6vh,72px)">
+    <div class="kicker rv" style="margin-bottom:18px"><span class="ln"></span>BY THE NUMBERS</div>
+    <h2 class="sec-head" style="padding:0">검증된 현장 수치</h2>
+  </div>
+  <div class="stats">
+    <div class="stat rv"><div class="v">0.1–0.3<small>m</small></div><div class="k">실내 UWB 측위 정밀도 (앵커 3+)</div></div>
+    <div class="stat rv"><div class="v">~5<small>Hz</small></div><div class="k">AR 경로 실시간 재계산 주기</div></div>
+    <div class="stat rv"><div class="v">5<small>종</small></div><div class="k">실시간 가스 감시 (CO·O₂·LEL·H₂S·HCN)</div></div>
+    <div class="stat rv"><div class="v">&lt;55<small>bar</small></div><div class="k">SCBA 잔압 진입 차단 임계</div></div>
   </div>
 </section>
 
-<!-- ░░ CTA ░░ -->
-<section class="cta" id="demo">
-  <div class="cta-bg"><img src="assets/silhouette.jpg" alt=""></div>
-  <div class="wrap cta-in">
-    <div>
-      <h2>현장을 열고, 판단을 깨운다.</h2>
-      <p>FRIZE와 함께 더 빠르고, 더 안전한 구조를 실현하세요.</p>
-    </div>
-    <div class="cta-btns">
-      <a class="btn btn-red" href="mailto:contact@frize.io">데모 요청하기</a>
-      <a class="btn btn-ghost" href="mailto:contact@frize.io">파트너 문의</a>
-    </div>
+<section class="band" style="min-height:clamp(340px,52vh,560px)">
+  <img src="assets/kr_truck.jpg" alt="소방 배치" style="object-position:center 60%">
+  <div class="band-in rv">
+    <div class="eyebrow" style="margin-bottom:18px"><span class="i">●</span>&nbsp;&nbsp;DEPLOYMENT</div>
+    <h2>장비는 켜는 순간<br>스스로 연결된다</h2>
+    <p>고글·드론·IoT 장비는 전원만 넣으면 지휘 콕핏과 자동 페어링되어 능력을 신고합니다. 설정도, 메뉴도 없습니다.</p>
   </div>
 </section>
 
-<!-- ░░ FOOTER ░░ -->
-<footer class="foot" id="company">
-  <div class="wrap">
-    <div class="foot-grid">
-      <div>
-        <div class="logo"><b>F</b>RIZE</div>
-        <address>
-          ㈜FRIZE · 경기도 성남시 분당구 판교로 255번길 28, 8층<br>
-          대표전화 070-3604-1562 · contact@frize.io
-        </address>
-        <div class="social">
-          <a href="#" aria-label="YouTube"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.5-5a3 3 0 00-2-2C18.5 4.5 12 4.5 12 4.5s-6.5 0-8.5.5a3 3 0 00-2 2C1 8.5 1 12 1 12s0 3.5.5 5a3 3 0 002 2c2 .5 8.5.5 8.5.5s6.5 0 8.5-.5a3 3 0 002-2c.5-1.5.5-5 .5-5zM10 15.5v-7l6 3.5-6 3.5z"/></svg></a>
-          <a href="#" aria-label="LinkedIn"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4.98 3.5a2.5 2.5 0 100 5 2.5 2.5 0 000-5zM3 9h4v12H3zM9 9h3.8v1.7h.05c.53-1 1.83-2.05 3.77-2.05C20.5 8.65 21 11 21 14.2V21h-4v-6c0-1.4-.03-3.2-2-3.2s-2.3 1.5-2.3 3.1V21H9z"/></svg></a>
-        </div>
-      </div>
-      <div><h5>제품</h5><ul><li><a href="#product">제품 소개</a></li><li><a href="#features">핵심 기능</a></li><li><a href="#tech">기술</a></li><li><a href="#roadmap">로드맵</a></li></ul></div>
-      <div><h5>회사</h5><ul><li><a href="#company">회사 소개</a></li><li><a href="#">파트너</a></li><li><a href="#">채용</a></li></ul></div>
-      <div><h5>지원</h5><ul><li><a href="#">공지사항</a></li><li><a href="#">문의하기</a></li><li><a href="#demo">데모 요청</a></li></ul></div>
-      <div><h5>Follow Us</h5><ul><li><a href="#">YouTube</a></li><li><a href="#">LinkedIn</a></li></ul></div>
-    </div>
-    <div class="foot-bot">
-      <span>© 2026 FRIZE Inc. All rights reserved.</span>
-      <span><a href="#">개인정보처리방침</a> &nbsp;·&nbsp; <a href="#">이용약관</a></span>
+<section class="cta">
+  <div class="wrap rv">
+    <div class="eyebrow" style="margin-bottom:22px"><span class="i">●</span>&nbsp;&nbsp;GET STARTED</div>
+    <h2>당신의 관할에서<br>FRIZE를 시연합니다</h2>
+    <p>소방서·지자체·기관 대상 현장 데모와 기술 브리핑을 제공합니다. 30분이면 충분합니다.</p>
+    <div class="hero-actions">
+      <a class="btn btn-pri" href="demo.html">데모 요청 <span class="ar">→</span></a>
+      <a class="btn btn-ghost" href="invest.html">투자 문의 <span class="ar">→</span></a>
     </div>
   </div>
+</section>
+<footer class="ft">
+<div class="ft-top">
+  <div class="ft-brand">
+    <div class="brand" style="font-size:18px"><span class="mk"></span>FRIZE</div>
+    <p>연기 속 현장을 실시간으로 보고, 찾고, 안내하고, 지키는 소방 현장 지휘 운영체제(Command&nbsp;OS). 드론·스마트 고글·현장 IoT·지휘 콕핏을 하나의 망으로 묶습니다.</p>
+    <div class="addr">FRIZE INC. — 프라이즈<br>충청북도 청주시 흥덕구 가경로 (R&amp;D 센터)<br>36.6424°N · 127.4890°E<br>FRIZE-DOC / WS-0001 · REV 2026.06</div>
+  </div>
+  <div class="ft-col"><h5>제품</h5>
+    <a href="system.html">시스템 개요</a><a href="system.html#twin">디지털 트윈</a>
+    <a href="system.html#vlm">VLM 탐지</a><a href="system.html#nav">AR 내비게이션</a>
+    <a href="system.html#safety">안전 인터록</a><a href="system.html#hardware">하드웨어</a>
+  </div>
+  <div class="ft-col"><h5>회사</h5>
+    <a href="mission.html">미션</a><a href="company.html">회사소개</a>
+    <a href="company.html#values">핵심 가치</a><a href="careers.html">채용 <span class="ext">3</span></a>
+    <a href="news.html">뉴스 · 공지</a><a href="company.html#timeline">연혁</a>
+  </div>
+  <div class="ft-col"><h5>문의</h5>
+    <a href="demo.html">데모 요청</a><a href="invest.html">투자 문의</a>
+    <a href="demo.html">기관·소방서 협력</a><a href="careers.html">인재 제안</a>
+    <a href="mailto:hello@frize.kr">hello@frize.kr</a><a href="mailto:press@frize.kr">언론 · press@frize.kr</a>
+  </div>
+  <div class="ft-col"><h5>리소스</h5>
+    <a href="#">기술 백서 <span class="ext">PDF</span></a><a href="#">제품 브로슈어 <span class="ext">PDF</span></a>
+    <a href="#">보도 자료실</a><a href="#">브랜드 가이드</a>
+    <a href="#">현장 도입 사례</a><a href="#">상태 페이지 <span class="ext">↗</span></a>
+  </div>
+</div>
+
+<div class="ft-news">
+  <div><h5>현장 브리핑 구독</h5><p>제품 업데이트 · 도입 사례 · 채용 소식. 월 1회, 스팸 없음.</p></div>
+  <form data-demo><input type="email" placeholder="name@dept.go.kr" required><button type="submit">구독</button></form>
+</div>
+
+<div class="ft-badges">
+  <span>ISO 9001 (준비중)</span><span>정보보호 ISMS (준비중)</span><span>조달 등록 예정</span>
+  <span>NFPA 호환 설계</span><span>공공 SW 영향평가 대비</span><span>SBOM 제공</span><span data-clock>--:--:--Z</span>
+</div>
+
+<div class="ft-legal">
+  <div class="links">
+    <a href="#">개인정보처리방침</a><a href="#">이용약관</a><a href="#">영상정보 처리방침</a>
+    <a href="#">쿠키 설정</a><a href="#">취약점 신고</a><a href="#">사이트맵</a><a href="#">접근성</a>
+  </div>
+  <div class="copy">© 2026 FRIZE INC. ALL RIGHTS RESERVED · 사업자등록 000-00-00000</div>
+</div>
+<div class="ft-credit">
+사진: 「High-Rise Fire Test / Wind-Driven Fires」(U.S. Gov, Public Domain) · 「강원도 소방공무원」「안산 소방차량」(Wikimedia Commons, CC BY-SA) · 고글/콕핏/트윈 이미지는 FRIZE 자체 엔진 렌더(내부 산출물). 본 페이지의 수치·임계값은 현재 빌드의 검증값이며 사양은 고지 없이 변경될 수 있습니다. 본 사이트는 데모용 정적 페이지로 일부 링크는 비활성입니다.
+</div>
 </footer>
-
-<script>
-  // 시나리오 탭(데모용 토글)
-  document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
-    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
-    t.classList.add('on');
-  }));
-</script>
-</body>
-</html>
+<script src="app.js"></script></body></html>
