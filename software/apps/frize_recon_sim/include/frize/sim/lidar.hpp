@@ -36,7 +36,9 @@ struct Lidar {
           range_sigma(sigma), dropout(drop), az_n(az_n_), el_n(el_n_), seed(seed_) {}
 
     // 한 자세에서 한 번 스윕. OpenMP로 레이를 병렬 캐스팅(결정론적 노이즈).
-    std::vector<ScanPoint> scan(const Building& b, const Vec3f& pos, float yaw, float pitch){
+    //  fire/sim_t를 주면 시간 진행형 화재장으로 온도를 덮어쓴다(번지는 불 시뮬).
+    std::vector<ScanPoint> scan(const Building& b, const Vec3f& pos, float yaw, float pitch,
+                                const FireSim* fire=nullptr, float sim_t=0.f){
         Vec3f fwd, col[3]; rot_zy(yaw,pitch,fwd,col);
         bool full = az_fov >= 6.28f;
         const int R = az_n*el_n;
@@ -63,7 +65,12 @@ struct Lidar {
             t += (r1*2.f-1.f)*range_sigma*1.7f;           // 결정론적 거리노이즈
             Vec3f p{ pos.x+d.x*t, pos.y+d.y*t, pos.z+d.z*t };
             float temp = b.box_temp(bi);
-            if (std::isnan(temp)){
+            if (fire){
+                // 시간 진행형 화재장: 전선이 번지며 표면(벽/가구)을 달군다.
+                float ft = fire->temp_at(p, sim_t);
+                if (!std::isnan(ft)) temp = std::isnan(temp) ? ft : std::max(temp, ft);
+            } else if (std::isnan(temp)){
+                // (폴백) 정적 방사형 온기 ― fire 미지정 시 기존 거동 유지.
                 float dx=p.x-b.fire.x, dy=p.y-b.fire.y, dz=p.z-b.fire.z;
                 float r=std::sqrt(dx*dx+dy*dy+dz*dz);
                 float warm = 240.0f/(1.0f+std::pow(r,1.7f));

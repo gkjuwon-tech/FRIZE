@@ -25,6 +25,10 @@ class CockpitClient : public QObject {
     // 3D 디지털 트윈
     Q_PROPERTY(QVariantList twinVoxels READ twinVoxels NOTIFY twinUpdated)
     Q_PROPERTY(QVariantList twinFrontiers READ twinFrontiers NOTIFY twinUpdated)
+    // 화재 확산: 전선(번지는 가장자리) / 확산 벡터(어디로) / 재정찰 목표
+    Q_PROPERTY(QVariantList fireFront READ fireFront NOTIFY twinUpdated)
+    Q_PROPERTY(QVariantList fireSpread READ fireSpread NOTIFY twinUpdated)
+    Q_PROPERTY(QVariantList revisitTargets READ revisitTargets NOTIFY twinUpdated)
     Q_PROPERTY(double voxelSize READ voxelSize NOTIFY twinUpdated)
     Q_PROPERTY(int exploredCells READ exploredCells NOTIFY twinUpdated)
     // 매핑 서비스가 굽는 TSDF 표면 메쉬(glTF). 파일이 갱신되면 자동 리로드.
@@ -43,6 +47,9 @@ public:
     int alertCount() const { return alerts_.rowCount(); }
     QVariantList twinVoxels() const { return twinVoxels_; }
     QVariantList twinFrontiers() const { return twinFrontiers_; }
+    QVariantList fireFront() const { return fireFront_; }
+    QVariantList fireSpread() const { return fireSpread_; }
+    QVariantList revisitTargets() const { return revisitTargets_; }
     double voxelSize() const { return voxelSize_; }
     int exploredCells() const { return exploredCells_; }
     QString twinMeshUrl() const { return twinMeshUrl_; }
@@ -93,6 +100,9 @@ private:
     // 3D 트윈
     QVariantList twinVoxels_;
     QVariantList twinFrontiers_;
+    QVariantList fireFront_;
+    QVariantList fireSpread_;
+    QVariantList revisitTargets_;
     double voxelSize_ = 0.25;
     int exploredCells_ = 0;
     // TSDF 표면 메쉬(glTF) 자동 리로드

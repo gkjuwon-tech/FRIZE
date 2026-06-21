@@ -14,6 +14,11 @@ Item {
     id: root
     property real meterToScene: 1.0          // glTF는 실척(m) → 1 unit = 1 m
     readonly property bool hasMesh: cockpit.twinMeshUrl && cockpit.twinMeshUrl.length > 0
+    // 화재 전선/확산 마커가 살아있게 보이도록 공용 펄스(0→1 반복)
+    property real firePulse: 0.0
+    NumberAnimation on firePulse {
+        from: 0.0; to: 1.0; duration: 900; loops: Animation.Infinite; running: true
+    }
 
     View3D {
         id: view
@@ -106,6 +111,83 @@ Item {
             }
         }
 
+        // ── 화재 확산 전선(번지는 가장자리): 지금 막 달궈지는 셀들 ──────────────
+        // 가열률(rate)이 클수록 밝고 크게 펄스 → '여기가 지금 번지는 중'을 강조.
+        Repeater3D {
+            model: cockpit.fireFront
+            delegate: Model {
+                source: "#Sphere"
+                // ENU(z-up) → Qt(y-up): (x,y,z) → (x, z, -y)
+                position: Qt.vector3d(modelData.x, modelData.z, -modelData.y)
+                property real hot: Math.min(1.0, modelData.rate/12.0)   // 0..1 가열강도
+                property real s: 0.003 + 0.004*hot + 0.0015*root.firePulse*hot
+                scale: Qt.vector3d(s, s, s)
+                materials: PrincipledMaterial {
+                    baseColor: Qt.rgba(1.0, 0.45 - 0.3*hot, 0.1, 1.0)
+                    // 펄스 + 가열강도로 발광 → 활발한 전선일수록 더 이글거림
+                    emissiveFactor: Qt.vector3d(1.0*(0.4+0.6*root.firePulse)*(0.5+hot),
+                                                0.35*(0.4+0.6*root.firePulse)*hot, 0.05)
+                    roughness: 0.6
+                }
+            }
+        }
+
+        // ── 화재 확산 벡터(어디로 번지나): 화점 중심 → 진행방향 코멧 트레일 ────────
+        Repeater3D {
+            model: cockpit.fireSpread
+            delegate: Node {
+                id: spreadNode
+                property var sv: modelData
+                property bool moving: sv.rate > 0.05
+                // 화점 핵: 크고 붉게 이글거리는 구
+                Model {
+                    source: "#Sphere"
+                    position: Qt.vector3d(spreadNode.sv.cx, spreadNode.sv.cz, -spreadNode.sv.cy)
+                    property real s: 0.006 + 0.006*Math.min(1.0, spreadNode.sv.peak/600.0)
+                    scale: Qt.vector3d(s, s, s)
+                    materials: PrincipledMaterial {
+                        baseColor: "#ff3b14"
+                        emissiveFactor: Qt.vector3d(1.0, 0.25, 0.05); roughness: 0.5
+                    }
+                }
+                // 진행방향 화살촉 트레일: 중심에서 dir 방향으로 점점 작아지는 점들
+                Repeater3D {
+                    model: spreadNode.moving ? 5 : 0
+                    delegate: Model {
+                        source: "#Sphere"
+                        property real step: (index+1) * 0.55
+                        position: Qt.vector3d(spreadNode.sv.cx + spreadNode.sv.dx*step,
+                                              spreadNode.sv.cz + spreadNode.sv.dz*step,
+                                              -(spreadNode.sv.cy + spreadNode.sv.dy*step))
+                        property real s: 0.006 - index*0.0009
+                        scale: Qt.vector3d(s, s, s)
+                        materials: PrincipledMaterial {
+                            // 진행할수록 주황→노랑(앞으로 번질 쪽을 미리 보여줌)
+                            baseColor: Qt.rgba(1.0, 0.5+index*0.08, 0.1, 1.0)
+                            emissiveFactor: Qt.vector3d(0.9-index*0.12, 0.4+index*0.06, 0.05)
+                            opacity: 0.85 - index*0.12; alphaMode: PrincipledMaterial.Blend
+                        }
+                    }
+                }
+            }
+        }
+
+        // ── 드론 재정찰 목표: '되돌아가 확인할' 화재 구역(시안 펄스 링) ───────────
+        Repeater3D {
+            model: cockpit.revisitTargets
+            delegate: Model {
+                source: "#Sphere"
+                position: Qt.vector3d(modelData.x, modelData.z, -modelData.y)
+                property real s: 0.007 + 0.003*root.firePulse
+                scale: Qt.vector3d(s, s, s)
+                opacity: 0.30;
+                materials: PrincipledMaterial {
+                    baseColor: "#2fe0d0"; emissiveFactor: Qt.vector3d(0.1,0.5,0.45)
+                    alphaMode: PrincipledMaterial.Blend
+                }
+            }
+        }
+
         // 디바이스 마커
         Repeater3D {
             model: cockpit.devices
@@ -136,6 +218,13 @@ Item {
             Text { text: (root.hasMesh ? "· TSDF surface" : "· voxel " + cockpit.twinVoxels.length)
                         + " · frontier " + cockpit.twinFrontiers.length
                    color: "#7c828c"; font.pixelSize: 11; font.family: "Consolas" }
+            Text {
+                visible: cockpit.fireFront.length > 0 || cockpit.fireSpread.length > 0
+                text: "· 🔥 spread front " + cockpit.fireFront.length
+                      + " · fire " + cockpit.fireSpread.length
+                      + " · revisit " + cockpit.revisitTargets.length
+                color: "#ff7a3c"; font.pixelSize: 11; font.bold: true; font.family: "Consolas"
+            }
         }
     }
 }

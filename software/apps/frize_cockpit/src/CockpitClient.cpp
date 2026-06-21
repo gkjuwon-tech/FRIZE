@@ -123,6 +123,38 @@ void CockpitClient::applyMapPatch(const QJsonObject& p) {
         m["x"]=(a[0].toInt()+0.5)*v+ox; m["y"]=(a[1].toInt()+0.5)*v+oy; m["z"]=(a[2].toInt()+0.5)*v+oz;
         twinFrontiers_.push_back(m);
     }
+    // ── 화재 확산(월드 m 좌표로 직접 옴) ──
+    // 확산 전선 [x,y,z,temp_c,dT_dt] : 지금 막 달궈지는 표면 = 불이 번지는 가장자리
+    fireFront_.clear();
+    for (const auto& ff : p.value("fire_front").toArray()) {
+        const QJsonArray a = ff.toArray();
+        if (a.size()<5) continue;
+        QVariantMap m;
+        m["x"]=a[0].toDouble(); m["y"]=a[1].toDouble(); m["z"]=a[2].toDouble();
+        m["temp"]=a[3].toDouble(); m["rate"]=a[4].toDouble();
+        fireFront_.push_back(m);
+    }
+    // 확산 벡터 [cx,cy,cz,dx,dy,dz,rate,peak] : 화점이 '어느 방향으로' 번지는가
+    fireSpread_.clear();
+    for (const auto& fs : p.value("fire_spread").toArray()) {
+        const QJsonArray a = fs.toArray();
+        if (a.size()<8) continue;
+        QVariantMap m;
+        m["cx"]=a[0].toDouble(); m["cy"]=a[1].toDouble(); m["cz"]=a[2].toDouble();
+        m["dx"]=a[3].toDouble(); m["dy"]=a[4].toDouble(); m["dz"]=a[5].toDouble();
+        m["rate"]=a[6].toDouble(); m["peak"]=a[7].toDouble();
+        fireSpread_.push_back(m);
+    }
+    // 재정찰 목표 [x,y,z,priority] : 드론이 되돌아가 확산을 재확인할 곳
+    revisitTargets_.clear();
+    for (const auto& rv : p.value("revisit").toArray()) {
+        const QJsonArray a = rv.toArray();
+        if (a.size()<4) continue;
+        QVariantMap m;
+        m["x"]=a[0].toDouble(); m["y"]=a[1].toDouble(); m["z"]=a[2].toDouble();
+        m["priority"]=a[3].toDouble();
+        revisitTargets_.push_back(m);
+    }
     emit twinUpdated();
 }
 

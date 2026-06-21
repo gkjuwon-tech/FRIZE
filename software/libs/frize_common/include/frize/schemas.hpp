@@ -314,6 +314,10 @@ struct MapPatch {
     std::vector<std::array<double,4>> thermal;       // [ix,iy,iz,temp_c]
     std::vector<std::array<int,3>> frontiers;        // 탐사 경계(미탐사와 맞닿은 자유공간) [ix,iy,iz]
     int explored_cells{0};                            // 누적 탐사 셀 수(진행률)
+    // ── 화재 확산 분석(열화상 시계열, 월드 m 좌표) ──
+    std::vector<std::array<double,5>> fire_front;    // 확산 전선 [x,y,z,temp_c,dT_dt(C/s)]
+    std::vector<std::array<double,8>> fire_spread;   // 확산 벡터 [cx,cy,cz,dx,dy,dz,rate,peak_c]
+    std::vector<std::array<double,4>> revisit;       // 드론 재정찰 목표 [x,y,z,priority]
     double ts{now_s()};
 };
 
@@ -402,7 +406,7 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(DeviceSummary, device_id, device
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(HazardZone, zone_id, hazard, severity, center, radius_m, rationale, ts)
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(WorldSnapshot, ts, devices, detections, hazard_zones,
     active_alerts, site_origin)
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(MapPatch, patch_id, origin, voxel_size_m, dims, occupied, thermal, frontiers, explored_cells, ts)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(MapPatch, patch_id, origin, voxel_size_m, dims, occupied, thermal, frontiers, explored_cells, fire_front, fire_spread, revisit, ts)
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(VideoFrameMeta, device_id, seq, stream, width, height, codec,
     pose, jpeg_b64, ts)
 
